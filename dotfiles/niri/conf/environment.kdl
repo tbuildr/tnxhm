@@ -1,0 +1,5 @@
+// You can change the path where screenshots are saved (set to null to disable)
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+environment {
+    GTK_THEME "Adwaita:dark"
+}

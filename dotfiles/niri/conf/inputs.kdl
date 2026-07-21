@@ -1,0 +1,31 @@
+// Input Device Profiles
+// https://niri-wm.github.io/niri/Configuration:-Input
+input {
+    keyboard {
+        xkb {
+            // Options: layout "us", options "grp:win_space_toggle"
+	    layout "gb"
+        }
+        numlock
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+    }
+
+    // Enable hovering to switch window focus without clicking
+    focus-follows-mouse
+
+    mouse {
+        // Accel configuration options go here
+    }
+
+    trackpoint {
+        // Trackpoint options go here
+    }
+    // Uncomment this to make the mouse warp to the center of newly focused windows
+    // warp-mouse-to-focus
+    // Setting max-scroll-amount="0%" makes it work only on windows already fully on screen.
+    // focus-follows-mouse max-scroll-amount="0%"
+}

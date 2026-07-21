@@ -1,0 +1,23 @@
+# Nix build results
+result
+result-*
+
+# Development environments
+.direnv/
+
+# Secrets
+.env
+.env.local
+*.key
+*.pem
+secrets/
+private/
+
+# Temporary editor files
+*.swp
+*.swo
+*~
+
+# Generated output
+build/
+output/

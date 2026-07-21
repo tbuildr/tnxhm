@@ -1,0 +1,5 @@
+[mgr]
+show_hidden = true
+linemode    = "ls_l"
+# Don't like changing ration as am happy with 3 columns
+# ratio       = [0, 1, 0] # 0 removes parent, 1 keeps current list wide, 0 removes preview

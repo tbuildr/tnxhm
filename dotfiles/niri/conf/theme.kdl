@@ -1,0 +1,54 @@
+// Aesthetic Layout and Theme Styles
+// https://github.io
+layout {
+    gaps 8
+    center-focused-column "never"
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    default-column-width { proportion 0.5; }
+
+    focus-ring {
+        width 1
+        active-color "#7fc8ff"
+        inactive-color "#505050"
+    }
+
+    border {
+        off
+        width 4
+        active-color "#ffc87f"
+        inactive-color "#505050"
+    }
+
+    shadow {
+        // You can enable drop shadows for windows.
+        // Uncomment the next line to enable shadows.
+        // on
+	      softness 30
+	      spread 5
+	      offset x=0 y=5
+	      color "#0007"
+    }
+
+    struts {
+	// Struts shrink the area occupied by windows, similarly to layer-shell panels.
+        // You can think of them as a kind of outer gaps. They are set in logical pixels.
+	// left 64
+        // right 64
+        // top 64
+        // bottom 64
+    }
+
+}
+//
+// layer-rule requires backdrop to be enabled in Noctalia settings
+layer-rule {
+    match namespace="^noctalia-backdrop"
+    place-within-backdrop true
+}
+

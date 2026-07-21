@@ -1,0 +1,13 @@
+// Master configuration hub for Niri.
+// https://niri-wm.github.io/niri/Configuration:-Introduction
+
+// --- Modules ---
+include "conf/animations.kdl"
+include "conf/autostart.kdl"
+include "conf/decorations.kdl"
+include "conf/environment.kdl"
+include "conf/inputs.kdl"
+include "conf/keybinds.kdl"
+include "conf/monitors.kdl"
+include "conf/theme.kdl"
+include "conf/windowrules.kdl"

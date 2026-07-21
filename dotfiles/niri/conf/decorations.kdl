@@ -1,0 +1,3 @@
+// Uncomment this line to ask the clients to omit their client-side decorations if possible.
+prefer-no-csd
+

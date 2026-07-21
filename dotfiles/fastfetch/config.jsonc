@@ -1,0 +1,222 @@
+// Fastfetch Config - Gruvbox Edition
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "source": "~/.config/fastfetch/bazzite.png",
+    "type": "kitty",
+    "padding": {
+      "right": 1,
+      "left": 1
+    }
+  },
+  "display": {
+    "size": {
+      "binaryPrefix": "jedec", // Converts GiB -> GB, MiB -> MB, etc.
+      "ndigits": 0 // Natively strips the decimal and trailing digits (.62)
+    },
+    "color": {
+      "keys": ""
+    },
+    "separator": " \uf061\u001b[2C",
+    "constants": [
+      "\u001b[s", // {$1}  - ANSI escape: save cursor position (ESC[s)
+      "\u001b[u\u001b[14C", // {$2}  - ANSI escape: restore cursor to saved position (ESC[u) then
+      //         ANSI escape: move cursor right 14 columns (ESC[14C)
+      "\u001b[38;2;230;138;66m", // {$3}  - Gruvbox Orange Bright (#e68a42)
+      "\u001b[38;2;214;93;14m", // {$4}  - Gruvbox Orange (#d65d0e)
+      "\u001b[38;2;240;192;64m", // {$5}  - Gruvbox Yellow Bright (#f0c040)
+      "\u001b[38;2;215;153;33m", // {$6}  - Gruvbox Yellow (#d79921)
+      "\u001b[38;2;106;181;184m", // {$7}  - Gruvbox Blue Bright (#6ab5b8)
+      "\u001b[38;2;69;133;136m", // {$8}  - Gruvbox Blue (#458588)
+      "\u001b[38;2;208;112;160m", // {$9}  - Gruvbox Purple Bright (#d070a0)
+      "\u001b[38;2;177;98;134m", // {$10} - Gruvbox Purple (#b16286)
+      "\u001b[38;2;196;195;48m", // {$11} - Gruvbox Green Bright (#c4c330)
+      "\u001b[38;2;152;151;26m", // {$12} - Gruvbox Green (#98971a)
+      "\u001b[38;2;139;192;140m", // {$13} - Gruvbox Aqua Bright (#8bc08c)
+      "\u001b[38;2;104;157;106m" // {$14} - Gruvbox Aqua (#689d6a)
+    ],
+    "brightColor": false
+  },
+  "modules": [
+    // Top section with Gruvbox Orange theme
+    {
+      "type": "break"
+    },
+    {
+      "type": "version",
+      "key": " ",
+      "format": "\uD83D\uDE80\u001b[1m {$3}{1} - {2} "
+    },
+    {
+      "type": "title",
+      "keyIcon": "\uf007",
+      "key": "{$4}├─ {icon}  {$1}Login{$2}"
+    },
+    {
+      "type": "os",
+      "key": "{$4}├─ {icon}  {$1}{sysname}{$2}"
+    },
+    {
+      "type": "shell",
+      "key": "{$4}├─ {icon}  {$1}Shell{$2}"
+    },
+    {
+      "type": "terminal",
+      "key": "{$4}├─ {icon}  {$1}Terminal{$2}"
+    },
+    {
+      "type": "packages",
+      "key": "{$4}├─ {icon}  {$1}Packages{$2}"
+    },
+    {
+      "type": "command",
+      "keyIcon": "\uE760",
+      "key": "{$4}\u2570\u2500 {icon}  {$1}Starship{$2}",
+      "text": "starship --version | head -1 | awk '{print $2}'"
+    },
+    // Hardware section with Gruvbox Yellow theme
+    {
+      "type": "break"
+    },
+    {
+      "type": "custom",
+      "key": " ",
+      "format": "\uD83D\uDD27\uFE0F {$5}Hardware "
+    },
+    {
+      "type": "host",
+      "key": "{$6}├─ {icon}  {$1}Chassis{$2}"
+    },
+    {
+      "type": "cpu",
+      "key": "{$6}├─ {icon}  {$1}CPU{$2}",
+      "keyIcon": "\uf4bc"
+    },
+    {
+      "type": "gpu",
+      "key": "{$6}├─ {icon}  {$1}GPU{$2}",
+      "keyIcon": "\uf4ca"
+    },
+    {
+      "type": "display",
+      "key": "{$6}├─ {icon}  {$1}Display{$2}"
+    },
+    {
+      "type": "memory",
+      "key": "{$6}├─ {icon}  {$1}RAM{$2}",
+      "format": "{percentage-bar} {used} \/ {total}",
+      "percent": {
+        "type": [
+          "bar"
+        ]
+      }
+    },
+    {
+      "type": "disk",
+      "key": "{$6}\u2570\u2500 {icon}  {$1}Disk{$2}",
+      "keyIcon": "\udb80\ude49",
+      "format": "{size-percentage-bar} {size-used} \/ {size-total} [{filesystem}] ({mountpoint})",
+      "showReadOnly": false,
+      "percent": {
+        "type": [
+          "bar"
+        ]
+      }
+    },
+    // Network section with Gruvbox Blue theme
+    {
+      "type": "break"
+    },
+    {
+      "type": "custom",
+      "key": " ",
+      "format": "\uD83C\uDF0D {$7}Network "
+    },
+    {
+      "type": "wifi",
+      "key": "{$8}├─ {icon}  {$1}Wifi{$2}"
+    },
+    {
+      "type": "localip",
+      "key": "{$8}├─ {icon}  {$1}IP Addr{$2}",
+      "keyIcon": "\uDB82\ude60",
+      "format": "[{4}] {1}"
+    },
+    {
+      "type": "publicip",
+      "key": "{$8}├─ {icon}  {$1}Public IP{$2}",
+      "keyIcon": "\uDB82\ude60"
+    },
+    {
+      "type": "dns",
+      "key": "{$8}\u2570\u2500 {icon}  {$1}DNS{$2}",
+      "keyIcon": "\uDB80\uddd6"
+    },
+    // Peripherals section with Gruvbox Purple theme
+    {
+      "type": "break"
+    },
+    {
+      "type": "custom",
+      "key": " ",
+      "format": "\uD83D\uDD0B\uFE0F {$9}Peripherals "
+    },
+    {
+      "type": "bluetooth",
+      "key": "{$10}├─ {icon}  {$1}Bluetooth{$2}"
+    },
+    {
+      "type": "poweradapter",
+      "key": "{$10}├─ {icon}  {$1}Power Adapter{$2}"
+    },
+    {
+      "type": "battery",
+      "key": "{$10}\u2570\u2500 {icon}  {$1}Battery{$2}"
+    },
+    // Media section with Gruvbox Green theme
+    {
+      "type": "break"
+    },
+    {
+      "type": "custom",
+      "key": " ",
+      "format": "\uD83C\uDFA7 {$11}Media "
+    },
+    {
+      "type": "media",
+      "key": "{$12}├─ {icon}  {$1}Now Playing{$2}",
+      "format": "{1:30}"
+    },
+    {
+      "type": "player",
+      "key": "{$12}\u2570\u2500 {icon}  {$1}Player{$2}"
+    },
+    // Date/Time section with Gruvbox Aqua theme
+    {
+      "type": "break"
+    },
+    {
+      "type": "custom",
+      "key": " ",
+      "format": "\uD83D\uDD54 {$13}Date/Time "
+    },
+    {
+      "type": "datetime",
+      "key": "{$14}├─ {icon}  {$1}Date/Time{$2}",
+      "format": "{day-pretty}-{month-name-short}-{year} / {hour-pretty}:{minute-pretty}:{second-pretty} {timezone-name}"
+    },
+    {
+      "type": "uptime",
+      "key": "{$14}\u2570\u2500 {icon}  {$1}Uptime{$2}"
+    },
+    // End with color palette and line break
+    {
+      "type": "break"
+    },
+    {
+      "type": "colors",
+      "key": " ",
+      "symbol": "circle"
+    }
+  ]
+}

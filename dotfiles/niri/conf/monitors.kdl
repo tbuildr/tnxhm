@@ -1,0 +1,22 @@
+// Monitor and Display Output Configuration
+// https://github.io
+
+// You can configure outputs by their name, which you can find
+// by running `niri msg outputs` while inside a niri instance.
+// The built-in laptop monitor is usually called "eDP-1".
+// Find more information on the wiki:
+// https://niri-wm.github.io/niri/Configuration:-Outputs
+// Remember to uncomment the node by removing "/-"!
+/-output "eDP-1" {
+    mode "1920x1080@120.030"
+    scale 2
+    transform "normal"
+    position x=1280 y=0
+}
+
+// For running gamescope in HDR, direct-scanout  allows it to bypass Niri's composition overhead 
+// sending frames direct to monitor for lower latency
+// direct-scanout is enabled by default but can be disabled for debug e.g. performance drops, display flickering
+// debug {
+//    disable-direct-scanout
+// }

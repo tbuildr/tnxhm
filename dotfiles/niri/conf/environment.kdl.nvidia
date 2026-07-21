@@ -1,0 +1,13 @@
+// You can change the path where screenshots are saved (set to null to disable)
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+environment {
+    GTK_THEME "Adwaita:dark"
+
+    // Nvidia Graphic Driver Flags (Already configured)
+    GBM_BACKEND "nvidia-drm"
+    __GLX_VENDOR_LIBRARY_NAME "nvidia"
+
+    // CRUCIAL: Force all Flatpaks to bypass X11 and use Niri Wayland wrappers
+    FLATPAK_ENABLE_SOCKET_WAYLAND "1"
+    ELECTRON_OZONE_PLATFORM_HINT "wayland"
+}

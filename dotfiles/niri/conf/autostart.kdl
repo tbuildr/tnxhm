@@ -1,0 +1,25 @@
+// --- Startup Processes ---
+// Add your status bar, wallpaper daemon, or notifications here.
+// spawn-at-startup "waybar"
+// spawn-at-startup "swww-daemon"
+spawn-at-startup "noctalia"
+//
+// *** FYI. REMOVE DESKTOP FILES FROM ~/.config/autostart/*.desktop
+// OR THEY MAY START IN ADDITION TO WHAT IS DEFINED HERE
+//
+// *** CANNOT GET SLEEP TO WORK AHEAD OF THESE COMMANDS HERE SO PUT IN WRAPPERS INSTEAD
+// Start Mullvad VPN
+spawn-at-startup "~/.local/bin/mullvad-vpn-wrapper.sh"
+// Updates Checker
+// spawn-at-startup "bash -c 'sleep 12 && ~/.local/bin/updates_checker.sh'"
+// SELinux notifications
+// spawn-at-startup "sleep 14 && TBD"
+// Start Steam
+// spawn-at-startup "bash -c 'sleep 16 && steam -silent'"
+// Mount Rclone Dropbox
+spawn-at-startup "~/.local/bin/rclone-mount-dropbox.sh"
+
+hotkey-overlay {
+    // Uncomment this line to disable the "Important Hotkeys" pop-up at startup.
+    skip-at-startup
+}
