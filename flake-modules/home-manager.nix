@@ -26,8 +26,7 @@
         config.flake.homeModules.lazygit
         config.flake.homeModules.toolbox
         config.flake.homeModules.devenv
-
-        ../home-modules/nvf.nix
+        config.flake.homeModules.editor
       ];
     });
 }
