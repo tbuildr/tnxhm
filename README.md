@@ -11,84 +11,96 @@ The repository uses **flake-parts**, **import-tree**, and a feature-oriented
 structure to manage my user environment while leaving operating-system
 responsibilities with Fedora and the immutable host image.
 
-## Overview
+# tnxhm
 
-This configuration targets:
+A reusable, feature-oriented Nix Home Manager configuration for Fedora Atomic
+and other compatible Linux systems.
 
-```text
-Platform:       x86_64-linux
-Home profile:   tom
-Home directory: /var/home/tom
-State version:  26.05
-Host:           Fedora 44 Atomic / tbzos
-```
-
-It manages:
-
-- user packages and command-line tools;
-- Fish, Starship, Zoxide and Devenv integration;
-- Neovim through NVF;
-- wrapped and preconfigured applications;
-- native modular Niri configuration;
-- Kitty configuration;
-- desktop portal preferences;
-- a custom Fedora Toolbx image;
-- an SSH agent and graphical YubiKey askpass helper;
-- user environment variables and Home Manager activation.
-
-This is a personal configuration. It contains usernames, paths, package choices,
-commands and host assumptions specific to my system.
+`tnxhm` provides the public and reusable part of a Home Manager environment. It
+manages user applications, command-line tools, shell configuration, desktop
+dotfiles and configured package wrappers while leaving personal identity and
+host-specific values to a separate wrapper flake.
 
 ## Architecture
 
-The configuration is divided into three layers:
+The configuration is divided into two repositories or layers:
 
 ```text
-Fedora Atomic / tbzos
-├── kernel, drivers and graphics stack
-├── Niri and desktop session
-├── Kitty and system applications
-├── Podman and Toolbx
-├── systemd system services
-├── SELinux, PAM and hardware integration
-└── immutable operating-system image
+Public tnxhm
+├── reusable Home Manager features
+├── wrapped and configured packages
+├── public dotfiles
+├── flake applications
+└── exports homeModules.default
 
-flake-parts
-├── assembles flake outputs
-├── automatically imports feature modules
-├── builds configured application packages
-├── exposes runnable apps
-├── exposes the repository formatter
-└── connects per-system packages to Home Manager
-
-Home Manager
-├── installs packages into the user profile
-├── activates configuration files
-├── configures Fish and Starship
-├── manages user services
-├── manages environment variables
-└── provides generations and rollback
+User-specific wrapper
+├── imports tnxhm.homeModules.default
+├── defines username and home directory
+├── defines a concrete homeConfigurations entry
+├── adds personal Git identity and signing configuration
+└── adds machine- or user-specific settings
 ```
 
-Home Manager is deliberately retained as the activation layer. Flake-parts
-builds and organises the configuration, while Home Manager safely applies it to
-the user environment.
+The public repository does not need to know the username, home directory, Git
+identity, signing-key path or private wrapper location.
+
+The intended dependency direction is:
+
+```text
+private or local wrapper
+        ↓ imports
+public tnxhm
+```
+
+The public repository never imports or refers to a private repository.
+
+## What this repository manages
+
+The exported Home Manager module includes:
+
+- Fish shell configuration;
+- Starship prompt configuration for the host and Toolbx;
+- Zoxide and Fzf integration;
+- Neovim configured declaratively through NVF;
+- native modular Niri configuration;
+- Kitty configuration;
+- desktop portal preferences;
+- fonts and Fontconfig;
+- an SSH agent and graphical askpass helper;
+- a custom Fedora Toolbx image definition;
+- Nix development and maintenance tools;
+- general command-line applications;
+- wrapped Btop, Lazygit, Fastfetch and Yazi packages.
+
+The public configuration is exported as:
+
+```nix
+homeModules.default
+```
+
+It deliberately does not export a complete user profile such as:
+
+```nix
+homeConfigurations.tom
+```
+
+A small user-specific wrapper creates that final configuration.
 
 ## Repository structure
 
 ```text
 .
-├── configs
-│   └── fastfetch
+├── configs/
+│   └── fastfetch/
 │       └── config.json
 │
-├── dotfiles
-│   ├── kitty
+├── dotfiles/
+│   ├── kitty/
 │   │   └── kitty.conf
 │   │
-│   ├── niri
+│   ├── niri/
 │   │   ├── config.kdl
-│   │   └── conf
+│   │   └── conf/
 │   │       ├── animations.kdl
 │   │       ├── autostart.kdl
 │   │       ├── decorations.kdl
@@ -100,29 +112,28 @@ the user environment.
 │   │       ├── theme.kdl
 │   │       └── windowrules.kdl
 │   │
-│   └── starship
+│   └── starship/
 │       ├── starship.toml
 │       └── starship-toolbox.toml
 │
-├── features
+├── features/
 │   ├── btop.nix
 │   ├── cli-tools.nix
 │   ├── devenv.nix
 │   ├── editor.nix
 │   ├── fastfetch.nix
 │   ├── fonts.nix
+│   ├── kitty.nix
 │   ├── lazygit.nix
 │   ├── niri.nix
 │   ├── nix-tools.nix
 │   ├── portals.nix
-│   ├── profile.nix
 │   ├── shell.nix
 │   ├── ssh.nix
-│   ├── terminal.nix
 │   ├── toolbox.nix
 │   └── yazi.nix
 │
-├── flake-modules
+├── flake-modules/
 │   └── home-manager.nix
 │
 ├── flake.lock
@@ -130,12 +141,15 @@ the user environment.
 └── README.md
 ```
 
+Every Nix file under `features/` is discovered automatically using
+`import-tree`.
+
 ## Flake design
 
 ### flake-parts
 
-`flake.nix` is intentionally small. It defines inputs, supported systems and the
-top-level module imports.
+The root `flake.nix` remains intentionally small. It defines the inputs,
+supported systems and top-level flake-parts imports.
 
 The main imports are:
 
@@ -145,15 +159,19 @@ inputs.home-manager.flakeModules.home-manager
 (inputs.import-tree ./features)
 ```
 
-`flake-modules/home-manager.nix` creates the `tom` standalone Home Manager
-configuration and selects the reusable modules that belong to it.
+`flake-modules/home-manager.nix` combines the public features and exports them
+as:
 
-### import-tree
+```nix
+flake.homeModules.default
+```
 
-Every `.nix` file under `features/` is a top-level flake-parts module and is
-imported automatically by `import-tree`.
+The user-specific wrapper selects the platform, creates `pkgs`, defines the
+profile and constructs the final Home Manager configuration.
 
-Each feature can define one or more of:
+### Feature modules
+
+Each feature is a flake-parts module and can define one or more of:
 
 ```nix
 flake.homeModules
@@ -162,12 +180,7 @@ perSystem.apps
 perSystem.formatter
 ```
 
-This keeps features self-contained without maintaining a long list of file
-imports in `flake.nix`.
-
-### Feature modules
-
-A typical feature exposes a reusable Home Manager module:
+A typical feature exports a reusable Home Manager module:
 
 ```nix
 {
@@ -177,37 +190,27 @@ A typical feature exposes a reusable Home Manager module:
 }
 ```
 
-Features that build configured packages use:
-
-```nix
-perSystem.packages
-```
-
-and connect those packages to Home Manager with:
-
-```nix
-moduleWithSystem
-self'.packages
-```
+Features that build configured packages expose them through `perSystem.packages`
+and connect them to Home Manager using `moduleWithSystem`.
 
 ## Wrapped applications
 
-The repository uses `nix-wrapper-modules` to build selected applications with
-their configuration embedded in the Nix store.
+Selected applications are built with their configuration embedded in the Nix
+store using `nix-wrapper-modules`.
 
-This removes the need for mutable configuration files under `~/.config` for
-those applications.
+This provides an immutable, reproducible application configuration without
+requiring a separate mutable configuration file under `~/.config`.
 
 ### Btop
 
-`features/btop.nix` builds a configured Btop package with:
+The Btop wrapper includes settings such as:
 
-- Vim navigation keys;
-- true colour;
+- Vim-style navigation;
+- true-colour output;
 - rounded corners;
 - terminal synchronisation;
-- a two-second update interval;
-- transparent terminal background support.
+- transparent background support;
+- a two-second update interval.
 
 Build it independently with:
 
@@ -218,11 +221,10 @@ nix build .#btop
 
 ### Lazygit
 
-`features/lazygit.nix` generates an immutable YAML configuration and launches
-Lazygit with `--use-config-file`.
+The Lazygit wrapper generates an immutable YAML configuration and launches
+Lazygit with that configuration.
 
-The configuration enables Nerd Font version 3 and adds custom pull commands,
-including recursive submodule pulling.
+It includes Nerd Font support and customised Git commands.
 
 Build it independently with:
 
@@ -231,42 +233,34 @@ nix build .#lazygit
 ./result/bin/lazygit
 ```
 
-Lazygit may still maintain writable runtime state, but its main configuration is
-embedded in the package.
+Lazygit may still create writable runtime state, but its main configuration is
+part of the wrapped package.
 
 ### Fastfetch
 
-`features/fastfetch.nix` reads:
+The Fastfetch wrapper reads:
 
 ```text
 configs/fastfetch/config.json
 ```
 
-and builds a wrapped Fastfetch package whose configuration is stored in the Nix
-derivation.
+Its configuration includes:
 
-The configuration includes:
-
-- a host-provided operating-system logo;
 - Kitty image protocol support;
-- a Gruvbox-inspired colour palette;
-- grouped login, hardware, network, peripheral, media and time sections;
 - Nerd Font icons;
+- grouped system-information sections;
 - percentage bars for memory and disk usage;
-- JEDEC sizes.
+- JEDEC size formatting;
+- a host-provided operating-system logo.
 
-The logo remains image-specific:
+The logo path is:
 
 ```text
 /usr/share/fastfetch/os-logo.png
 ```
 
-This allows the same Home Manager configuration to display branding supplied by
-different Fedora or bootc images.
-
-Bazzite supplies a Fish function that normally forces its stock Fastfetch
-configuration. The Home Manager Fish feature overrides that function while still
-resolving the wrapped executable through `PATH`.
+This keeps branding outside Home Manager so different Fedora or bootc images can
+provide their own logo.
 
 Build it independently with:
 
@@ -277,18 +271,17 @@ nix build .#fastfetch
 
 ### Yazi
 
-`features/yazi.nix` builds Yazi with its TOML and Lua configuration embedded.
+The Yazi wrapper embeds its TOML and Lua configuration and sets
+`YAZI_CONFIG_HOME` to the immutable configuration directory.
 
-The configuration:
+The configuration includes:
 
-- displays hidden files;
-- retains Yazi's normal three-column layout;
-- adds a custom `ls_l` line mode;
-- displays file permissions;
-- displays human-readable file sizes;
-- displays modification timestamps.
-
-The wrapper sets `YAZI_CONFIG_HOME` to an immutable directory in the Nix store.
+- hidden-file display;
+- the normal three-column layout;
+- a custom detailed line mode;
+- file permissions;
+- human-readable sizes;
+- modification timestamps.
 
 Build it independently with:
 
@@ -297,167 +290,26 @@ nix build .#yazi
 ./result/bin/yazi
 ```
 
-## Niri
+## Neovim through NVF
 
-Niri itself is supplied by Fedora rather than Nix.
-
-The repository deliberately keeps the configuration in native KDL instead of
-translating it into wrapper-specific Nix attributes. Native KDL remains easier
-to compare with Niri documentation and is already well suited to modular
-configuration.
-
-Home Manager recursively deploys:
-
-```text
-dotfiles/niri
-```
-
-to:
-
-```text
-~/.config/niri
-```
-
-The small top-level `config.kdl` loads the individual modules under `conf/`.
-
-The active configuration covers:
-
-- British keyboard layout;
-- touchpad configuration;
-- animations;
-- window decorations;
-- environment variables;
-- startup applications;
-- keybindings;
-- workspace and window behaviour;
-- window rules;
-- theme settings;
-- optional monitor configuration.
-
-An NVIDIA-specific alternative environment file is retained but is not loaded by
-the active configuration:
-
-```text
-dotfiles/niri/conf/environment.kdl.nvidia
-```
-
-The configuration is validated using Fedora's actual Niri binary rather than a
-potentially different Nixpkgs build.
-
-Validate it with:
-
-```bash
-nix run .#niri-validate
-```
-
-or directly:
-
-```bash
-/usr/bin/niri validate \
-  -c ~/.config/niri/config.kdl
-```
-
-Home Manager also validates the configuration before activation.
-
-## Fish and Starship
-
-Fish is the main interactive shell.
-
-The shell feature:
-
-- disables the default Fish greeting;
-- starts Fastfetch in interactive shells;
-- configures aliases and abbreviations;
-- enables Starship;
-- enables Zoxide;
-- integrates Devenv;
-- selects the correct Starship configuration for the current environment.
-
-### Starship selection
-
-The normal host shell uses:
-
-```text
-~/.config/starship/starship.toml
-```
-
-Toolbox shells use:
-
-```text
-~/.config/starship/starship-toolbox.toml
-```
-
-Devenv projects may provide their own `STARSHIP_CONFIG`, which is preserved.
-
-The selection logic distinguishes:
-
-```text
-DEVENV_ROOT   project-specific Devenv prompt
-TOOLBOX_PATH  Toolbox prompt
-otherwise     normal host prompt
-```
-
-Starship remains file-managed rather than wrapped because the prompt
-configuration changes dynamically between the host, Toolbox and Devenv
-environments.
-
-### Useful Fish commands
-
-```text
-hms       home-manager switch --flake ~/.config/home-manager#tom
-ykadd     ssh-add ~/.ssh/id_ed25519_sk_github_yk_1
-
-ls        eza --icons --group-directories-first
-ll        eza -lah --icons --group-directories-first --git
-la        eza -a --icons --group-directories-first
-lt        eza --tree --icons --level=2
-
-lgit      lazygit
-ldoc      lazydocker
-y         yazi
-neofetch  wrapped Fastfetch
-```
-
-## Kitty
-
-Kitty is currently supplied by the Fedora host.
-
-Home Manager manages its minimal configuration:
-
-```text
-~/.config/kitty/kitty.conf
-```
-
-Current font configuration:
-
-```text
-Font: JetBrainsMono Nerd Font Mono
-Size: 9
-```
-
-The font package is installed through the `fonts` feature and Fontconfig is
-enabled for the Home Manager profile.
-
-## Neovim with NVF
-
-Neovim is built and configured declaratively through NVF in:
+Neovim is configured declaratively with NVF in:
 
 ```text
 features/editor.nix
 ```
 
-The configuration provides a LazyVim-inspired environment while remaining fully
-expressed in Nix.
+The setup provides a LazyVim-inspired editor environment while remaining
+represented in Nix.
 
-Highlights include:
+Features include:
 
 - Tokyo Night Moon theme;
 - relative line numbers;
 - persistent undo;
-- system clipboard integration through `wl-copy`;
+- Wayland clipboard integration;
 - Blink completion;
-- LuaSnip and Friendly Snippets;
-- LSP support;
+- snippets;
+- language-server support;
 - formatting on save;
 - Tree-sitter;
 - Neo-tree;
@@ -469,56 +321,145 @@ Highlights include:
 - Snacks notifications;
 - Gitsigns;
 - Diffview;
-- Trouble diagnostics;
+- Trouble;
 - Toggleterm;
 - integrated Lazygit;
 - integrated Yazi.
 
-Configured languages include:
+Configured languages include Nix, Bash, Fish, C, C++, Lua, Markdown, JSON and
+TOML.
 
-- Nix;
-- Bash;
-- Fish;
-- C and C++;
-- Lua;
-- Markdown;
-- JSON;
-- TOML.
+The Tree-sitter CLI is included in the editor environment.
 
-The NVF environment also includes the Tree-sitter CLI.
+`vi`, `vim` and `nvim` resolve to the NVF-managed editor.
 
-`vi`, `vim` and `nvim` all resolve to the NVF-managed editor.
+## Niri
+
+Niri itself is supplied by the Fedora or bootc host rather than by Home Manager.
+
+The configuration remains in native KDL so it can be compared directly with Niri
+documentation and split naturally into separate files.
+
+Home Manager recursively deploys:
+
+```text
+dotfiles/niri/
+```
+
+to:
+
+```text
+~/.config/niri/
+```
+
+The top-level `config.kdl` includes the files under `conf/`.
+
+The configuration covers:
+
+- input devices;
+- British keyboard layout;
+- animations;
+- window decorations;
+- environment variables;
+- startup applications;
+- keybindings;
+- workspace and window behaviour;
+- window rules;
+- theme settings;
+- optional monitor configuration.
+
+An NVIDIA-specific environment file is retained as an alternative:
+
+```text
+dotfiles/niri/conf/environment.kdl.nvidia
+```
+
+The active Niri configuration is validated using the host’s Fedora Niri binary.
+
+Run the validation app with:
+
+```bash
+nix run .#niri-validate
+```
+
+Home Manager also validates the KDL before activating a new generation.
+
+## Fish and Starship
+
+Fish is the primary interactive shell.
+
+The public shell feature:
+
+- disables the default Fish greeting;
+- runs Fastfetch in interactive shells;
+- configures general aliases;
+- enables Starship;
+- enables Zoxide;
+- enables Fzf integration;
+- loads Devenv integration;
+- selects the appropriate Starship configuration.
+
+The normal host prompt uses:
+
+```text
+~/.config/starship/starship.toml
+```
+
+Toolbx shells use:
+
+```text
+~/.config/starship/starship-toolbox.toml
+```
+
+Devenv projects may supply their own `STARSHIP_CONFIG`, which takes priority.
+
+The selection order is:
+
+```text
+DEVENV_ROOT   project-specific prompt
+TOOLBOX_PATH  Toolbx prompt
+otherwise     normal host prompt
+```
+
+Personal abbreviations, signing-key filenames and wrapper-specific commands
+belong in the user-specific wrapper rather than this public feature.
+
+## Kitty
+
+Kitty is supplied by the host operating system.
+
+Home Manager deploys its public configuration to:
+
+```text
+~/.config/kitty/kitty.conf
+```
+
+The configured font is installed through the Home Manager fonts feature, with
+Fontconfig enabled for the user environment.
+
+Keeping the Kitty executable in the host image ensures that a terminal remains
+available even if Nix or Home Manager needs repair.
 
 ## Toolbx and Podman
 
-`features/toolbox.nix` defines a custom Fedora 44 Toolbx image:
+The Toolbx feature generates:
 
 ```text
-localhost/toolbox-dev:44
+~/.config/containers/toolbox.conf
+~/.config/toolbox-image/Containerfile
+~/.config/containers/systemd/toolbox-image.build
 ```
 
-The image is based on:
+The exact image name may be adjusted in `features/toolbox.nix`.
+
+The custom image is based on:
 
 ```text
 registry.fedoraproject.org/fedora-toolbox:44
 ```
 
-It includes:
-
-```text
-bat
-btop
-eza
-fastfetch
-fd-find
-fish
-fzf
-git
-kitty-terminfo
-neovim
-ripgrep
-zoxide
-```
+It installs a practical development environment including Fish, Git, Neovim,
+Ripgrep, Fd, Fzf, Eza, Bat, Zoxide, Btop and Kitty terminal information.
 
 The image creates:
 
@@ -526,69 +467,42 @@ The image creates:
 /nix -> /run/host/nix
 ```
 
-This exposes the host Nix store at the path expected by Home Manager links and
-Nix-installed programs inside Toolbx.
+Toolbx exposes the host filesystem under `/run/host`. This symlink makes the
+host Nix store available at `/nix`, which allows Home Manager-generated links
+and Nix-installed programs to work inside the container.
 
-The feature provides:
-
-```bash
-toolbox-image-build
-```
-
-It is also available as a flake package and app:
+The feature exposes a build helper as both a package and a flake app:
 
 ```bash
 nix build .#toolbox-image-build
 nix run .#toolbox-image-build
 ```
 
-The generated Podman build uses:
+The generated build uses Podman with a fresh base-image check and squashed
+output.
 
-- `--pull=newer`;
-- `--squash`;
-- the declaratively generated Containerfile.
+Rebuilding the image affects newly created containers. Existing Toolbx
+containers retain their existing writable container filesystem and must be
+updated internally or recreated.
 
-The feature also deploys:
+## SSH agent
 
-```text
-~/.config/containers/toolbox.conf
-~/.config/toolbox-dev/Containerfile
-~/.config/containers/systemd/toolbox-dev.build
-```
+The public SSH feature enables a user SSH agent and provides a graphical
+`SSH_ASKPASS` helper through Zenity.
 
-## SSH agent and YubiKey workflow
+It does not include:
 
-Home Manager enables a user SSH agent with a maximum identity lifetime of 30
-days.
+- private SSH keys;
+- public-key identity selections;
+- YubiKey credential filenames;
+- Git signing configuration;
+- PINs or passwords.
 
-A generated `SSH_ASKPASS` wrapper:
-
-- imports the active graphical-session environment from user systemd;
-- launches a Zenity password dialog;
-- uses the title `YubiKey FIDO2`.
-
-The Fish abbreviation:
-
-```text
-ykadd
-```
-
-adds:
-
-```text
-~/.ssh/id_ed25519_sk_github_yk_1
-```
-
-to the agent.
-
-The long agent lifetime does not disable YubiKey PIN or touch requirements. The
-key must still be added after reboot.
-
-No private keys, PINs or other secret material are stored in this repository.
+Those values belong in a private or local wrapper.
 
 ## Nix tooling
 
-The `nix-tools` feature installs:
+The Nix tooling feature includes utilities such as:
 
 ```text
 alejandra
@@ -605,9 +519,7 @@ It also enables:
 - Fish integration for Nix Index;
 - the `comma` command.
 
-Alejandra is exposed as the flake formatter.
-
-Format the repository with:
+Alejandra is exposed as the repository formatter:
 
 ```bash
 nix fmt .
@@ -615,7 +527,7 @@ nix fmt .
 
 ## CLI tools
 
-The general CLI feature installs tools including:
+The general CLI feature supplies applications such as:
 
 ```text
 bat
@@ -628,113 +540,509 @@ tmux
 wtype
 ```
 
-Configured applications such as Btop, Lazygit, Fastfetch and Yazi are supplied
-by their own features rather than the generic package list.
+Configured applications such as Btop, Lazygit, Fastfetch and Yazi are provided
+by their dedicated wrapped-package features instead of the generic package list.
 
 ## Devenv
 
-Devenv is installed through its own feature.
+Devenv is enabled through its own feature.
 
-Fish loads the Devenv hook after its normal interactive-shell configuration,
-allowing trusted projects to enter their environment automatically.
+Fish loads the Devenv hook after the normal interactive-shell setup. Trusted
+projects can therefore enter their declarative environments automatically.
 
-Project-specific Starship configuration is preserved when `DEVENV_ROOT` is set.
+A project-specific `STARSHIP_CONFIG` is preserved when `DEVENV_ROOT` is set.
 
 ## Desktop portals
 
-The portal feature deploys a Niri-specific preference file using:
+The portal feature deploys Niri-specific XDG portal preferences.
 
-```ini
-[preferred]
-default=gnome;gtk;
-org.freedesktop.impl.portal.Access=gtk;
-org.freedesktop.impl.portal.Notification=gtk;
-org.freedesktop.impl.portal.Secret=gnome-keyring;
-org.freedesktop.impl.portal.FileChooser=gtk;
-```
+The configuration selects GTK for file-chooser functionality while retaining
+appropriate GNOME implementations for other portal interfaces.
 
-This ensures GTK provides the file chooser while retaining suitable GNOME portal
-implementations for the remaining interfaces.
+## Public and private configuration
 
-## Flake inputs
-
-The main inputs are:
+A user-specific wrapper should contain settings such as:
 
 ```text
-nixpkgs             nixos-26.05
-home-manager        release-26.05
-flake-parts
-import-tree
-nix-index-database
-NVF
-nix-wrapper-modules
+features/profile.nix
+features/git.nix
+features/personal-shell.nix
+dotfiles/git/allowed_signers
 ```
 
-All inputs are pinned by `flake.lock`.
+Examples of settings that belong in the wrapper:
+
+- `home.username`;
+- `home.homeDirectory`;
+- `home.stateVersion`;
+- Git author name and email;
+- Git signing-key paths;
+- an SSH `allowed_signers` file;
+- personal Fish abbreviations;
+- private repository references;
+- machine-specific environment values.
+
+Do not put secrets in either repository.
+
+Files that must remain outside ordinary Nix store-backed configuration include:
+
+- private SSH keys;
+- access tokens;
+- API credentials;
+- passwords;
+- `rclone.conf` containing authentication tokens;
+- YubiKey PINs;
+- recovery codes.
 
 ## Installation
 
-This repository assumes Nix with flakes enabled and standalone Home Manager
-installed.
+`tnxhm` is a reusable Home Manager module rather than a complete user
+configuration.
 
-Clone it to the expected location:
+Do not clone this repository directly over:
+
+```text
+~/.config/home-manager
+```
+
+Instead, create a small wrapper flake containing your username, home directory
+and any private or machine-specific configuration.
+
+The repository provides a template for creating that wrapper.
+
+### Prerequisites
+
+The host must already have:
+
+- Nix with flakes enabled;
+- Home Manager available for the initial activation;
+- Git;
+- the system-level applications listed under
+  [Host dependencies](#host-dependencies).
+
+On Fedora Atomic, the normal home path is:
+
+```text
+/var/home/USERNAME
+```
+
+On a conventional Linux installation, it is usually:
+
+```text
+/home/USERNAME
+```
+
+## Create a wrapper from the template
+
+Create the Home Manager configuration directory:
 
 ```bash
-git clone https://github.com/tbuildr/tnxhm \
-  ~/.config/home-manager
-
+mkdir -p ~/.config/home-manager
 cd ~/.config/home-manager
 ```
 
-Inspect the flake:
+Initialise it from the `tnxhm` wrapper template:
+
+```bash
+nix flake init \
+  -t github:tbuildr/tnxhm#home-manager-wrapper
+```
+
+The template creates:
+
+```text
+~/.config/home-manager/
+├── flake.nix
+└── README.md
+```
+
+Open the generated flake:
+
+```bash
+vi flake.nix
+```
+
+Replace the template values:
+
+```nix
+username = "YOUR_USERNAME";
+homeDirectory = "/var/home/YOUR_USERNAME";
+```
+
+For example:
+
+```nix
+username = "alice";
+homeDirectory = "/var/home/alice";
+```
+
+On a conventional non-Atomic distribution, use:
+
+```nix
+homeDirectory = "/home/alice";
+```
+
+The generated wrapper imports:
+
+```nix
+tnxhm.homeModules.default
+```
+
+and adds the user-specific profile required to create:
+
+```nix
+homeConfigurations.${username}
+```
+
+## Initialise the wrapper repository
+
+Nix flakes created inside Git repositories only include files that are tracked
+or staged.
+
+Initialise Git and stage the generated files:
+
+```bash
+git init -b main
+git add flake.nix README.md
+```
+
+Create the lock file:
+
+```bash
+nix flake lock
+git add flake.lock
+```
+
+The wrapper’s `flake.lock` pins an exact revision of `tnxhm` and all of its
+inputs.
+
+## Validate before activation
+
+Inspect the wrapper outputs:
 
 ```bash
 nix flake show
 ```
 
-Build without activating:
-
-```bash
-home-manager build --flake .#tom
-```
-
-Run checks:
+Validate the configuration:
 
 ```bash
 nix flake check
 ```
 
-Activate:
+Build the Home Manager generation without activating it:
 
 ```bash
-home-manager switch --flake .#tom
+home-manager build --flake .#YOUR_USERNAME
 ```
 
-After the initial activation, the Fish abbreviation can be used:
+Replace `YOUR_USERNAME` with the username configured in `flake.nix`.
 
-```fish
-hms
-```
-
-## Useful commands
-
-### Home Manager
+For example:
 
 ```bash
-home-manager build --flake .#tom
-home-manager switch --flake .#tom
-home-manager generations
+home-manager build --flake .#alice
 ```
 
-### Flake maintenance
+## Initial activation
+
+Activate the generated configuration:
+
+```bash
+home-manager switch --flake .#YOUR_USERNAME
+```
+
+For example:
+
+```bash
+home-manager switch --flake .#alice
+```
+
+The wrapper now combines:
+
+```text
+public tnxhm configuration
+            +
+user profile from the wrapper
+            =
+active Home Manager generation
+```
+
+After activation, `programs.home-manager.enable` makes the `home-manager`
+command available through the user profile.
+
+## Template contents
+
+The supplied wrapper template provides a starting configuration equivalent to:
+
+```nix
+{
+  description = "Home Manager configuration using tnxhm";
+
+  inputs = {
+    tnxhm.url = "github:tbuildr/tnxhm";
+
+    nixpkgs.follows = "tnxhm/nixpkgs";
+    home-manager.follows = "tnxhm/home-manager";
+  };
+
+  outputs = {
+    nixpkgs,
+    home-manager,
+    tnxhm,
+    ...
+  }:
+    let
+      system = "x86_64-linux";
+
+      username = "YOUR_USERNAME";
+      homeDirectory = "/var/home/YOUR_USERNAME";
+    in
+    {
+      homeConfigurations.${username} =
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+
+          modules = [
+            tnxhm.homeModules.default
+
+            {
+              home = {
+                inherit username homeDirectory;
+
+                # Keep this at the version used for the first activation.
+                stateVersion = "26.05";
+
+                sessionPath = [
+                  "$HOME/.nix-profile/bin"
+                  "/nix/var/nix/profiles/default/bin"
+                  "$HOME/.local/bin"
+                ];
+
+                sessionVariables = {
+                  EDITOR = "nvim";
+                  VISUAL = "nvim";
+                  DOCKER_HOST =
+                    "unix://$XDG_RUNTIME_DIR/podman/podman.sock";
+                };
+              };
+
+              programs.home-manager.enable = true;
+            }
+          ];
+        };
+    };
+}
+```
+
+`home.stateVersion` is a compatibility baseline. Do not automatically change it
+whenever Home Manager is updated.
+
+## Creating a private wrapper repository
+
+The generated wrapper can remain local, but storing it in a private Git
+repository makes the complete configuration reproducible without exposing
+personal values publicly.
+
+The private wrapper is the appropriate place for:
+
+- `home.username`;
+- `home.homeDirectory`;
+- personal Git name and email;
+- SSH signing-key paths;
+- `allowed_signers`;
+- personal Fish abbreviations;
+- machine-specific environment variables;
+- private repository inputs.
+
+Example private structure:
+
+```text
+~/.config/home-manager/
+├── dotfiles/
+│   └── git/
+│       └── allowed_signers
+├── features/
+│   ├── git.nix
+│   ├── personal-shell.nix
+│   └── profile.nix
+├── flake-modules/
+│   └── home-manager.nix
+├── flake.lock
+└── flake.nix
+```
+
+The private assembly combines the modules with the public configuration:
+
+```nix
+modules = [
+  inputs.tnxhm.homeModules.default
+
+  config.flake.homeModules.profile
+  config.flake.homeModules.git
+  config.flake.homeModules.personal-shell
+];
+```
+
+The dependency must always point in this direction:
+
+```text
+private wrapper
+    └── imports public tnxhm
+```
+
+The public `tnxhm` repository must never import or reference the private
+wrapper.
+
+## Updating tnxhm
+
+The wrapper continues using its pinned `tnxhm` revision until its lock file is
+updated.
+
+Update only the public `tnxhm` input:
+
+```bash
+cd ~/.config/home-manager
+
+nix flake update tnxhm
+nix flake check
+home-manager switch --flake .#YOUR_USERNAME
+```
+
+Review the lock-file change:
+
+```bash
+git diff flake.lock
+```
+
+Then commit it:
+
+```bash
+git add flake.lock
+git commit -m "Update tnxhm input"
+git push
+```
+
+## Testing a local tnxhm checkout
+
+Contributors can clone the public repository separately:
+
+```bash
+git clone \
+  https://github.com/tbuildr/tnxhm \
+  ~/.config/tnxhm
+```
+
+Test local, unpushed public changes while retaining the personal wrapper:
+
+```bash
+home-manager switch \
+  --flake ~/.config/home-manager#YOUR_USERNAME \
+  --override-input tnxhm \
+  path:$HOME/.config/tnxhm
+```
+
+For example:
+
+```bash
+home-manager switch \
+  --flake ~/.config/home-manager#alice \
+  --override-input tnxhm \
+  path:$HOME/.config/tnxhm
+```
+
+This temporarily combines:
+
+```text
+local ~/.config/tnxhm checkout
+                +
+existing personal wrapper
+```
+
+without changing the pinned GitHub revision in `flake.lock`.
+
+## Testing the template locally
+
+Before publishing template changes, initialise a temporary wrapper from the
+local checkout:
+
+```bash
+test_directory=$(mktemp -d)
+
+cd "$test_directory"
+
+nix flake init \
+  -t path:$HOME/.config/tnxhm#home-manager-wrapper
+```
+
+Inspect the generated files:
+
+```bash
+find "$test_directory" -maxdepth 2 -type f -print
+```
+
+Remove the test directory afterwards:
+
+```bash
+rm -rf "$test_directory"
+```
+
+## Manual integration without the template
+
+An existing Home Manager flake can use `tnxhm` directly by adding it as an
+input:
+
+```nix
+inputs = {
+  tnxhm.url = "github:tbuildr/tnxhm";
+
+  nixpkgs.follows = "tnxhm/nixpkgs";
+  home-manager.follows = "tnxhm/home-manager";
+};
+```
+
+Then import the public module into its Home Manager configuration:
+
+```nix
+modules = [
+  tnxhm.homeModules.default
+
+  {
+    home.username = "example";
+    home.homeDirectory = "/var/home/example";
+    home.stateVersion = "26.05";
+
+    programs.home-manager.enable = true;
+  }
+];
+```
+
+The template is recommended for new installations because it provides this
+wrapper structure automatically.
+
+## Useful public-repository commands
+
+Run these from the `tnxhm` checkout.
+
+Validate the flake:
 
 ```bash
 nix flake check
-nix flake update
+```
+
+Inspect outputs:
+
+```bash
+nix flake show
+```
+
+Format Nix files:
+
+```bash
 nix fmt .
 ```
 
-### Wrapped packages
+Build wrapped packages:
 
 ```bash
 nix build .#btop
@@ -743,32 +1051,25 @@ nix build .#fastfetch
 nix build .#yazi
 ```
 
-### Flake apps
+Run flake applications:
 
 ```bash
-nix run .#toolbox-image-build
 nix run .#niri-validate
+nix run .#toolbox-image-build
 ```
 
-### Cleanup
-
-Remove a temporary `result` link created by `nix build`:
+Remove the temporary result link created by `nix build`:
 
 ```bash
 rm -f result
 ```
 
-Clean unused Home Manager generations with `nh`:
-
-```bash
-nh clean user
-```
-
 ## Host dependencies
 
-This configuration expects the Fedora or `tbzos` host to supply system-level
-components such as:
+The public configuration expects the host operating system to supply
+system-level components such as:
 
+- Nix and the Nix daemon;
 - Niri and its session integration;
 - Kitty;
 - Noctalia;
@@ -776,68 +1077,35 @@ components such as:
 - Swaylock;
 - Podman;
 - Toolbx;
-- graphical and hardware drivers;
-- the system Fastfetch logo;
-- user scripts referenced from `~/.local/bin`.
+- graphical drivers;
+- desktop and hardware integration;
+- the Fastfetch operating-system logo;
+- any host scripts referenced by the Niri configuration.
 
-This repository is not intended to turn Fedora into NixOS. Fedora remains
-responsible for the operating system, while Nix and Home Manager manage the user
-environment.
+On Fedora Atomic or a custom bootc image, these components should be installed
+in the host image rather than through Home Manager.
 
-## Testing changes
+## Flake inputs
 
-Changes are normally developed on short-lived Git branches.
+The main inputs are:
 
-Before merging:
-
-```bash
-nix fmt .
-home-manager build --flake .#tom
-nix flake check
-home-manager switch --flake .#tom
+```text
+nixpkgs
+home-manager
+flake-parts
+import-tree
+nix-index-database
+NVF
+nix-wrapper-modules
 ```
 
-A successful change can then be merged into `main`:
+All inputs are pinned through `flake.lock`.
 
-```bash
-git switch main
-git pull --ff-only
-git merge --ff-only <branch-name>
-git push origin main
-git branch -d <branch-name>
-```
+## Scope
 
-## Security
+This repository is designed primarily for Fedora Atomic and a Niri-based
+desktop, but the exported module can be used as a starting point elsewhere.
 
-The repository may contain public identifiers and public-key references, but it
-must not contain:
-
-- private SSH keys;
-- YubiKey PINs;
-- access tokens;
-- API credentials;
-- recovery codes;
-- passwords;
-- encryption secrets.
-
-Secrets and system authentication configuration remain outside this repository.
-
-## Credits
-
-This configuration builds on:
-
-- Nix;
-- Home Manager;
-- flake-parts;
-- import-tree;
-- nix-wrapper-modules;
-- NVF;
-- Niri;
-- Fedora Atomic;
-- Universal Blue and Bazzite;
-- Devenv;
-- Toolbx and Podman.
-
-The repository is intended as a record of my own configuration rather than a
-general-purpose framework, but individual features may still be useful as
-examples.
+It should be reviewed before activation because it includes opinionated package
+choices, keybindings, shell behaviour, desktop configuration and assumptions
+about host-provided software.
