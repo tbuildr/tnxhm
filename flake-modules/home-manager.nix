@@ -1,33 +1,45 @@
 {
   config,
   inputs,
-  withSystem,
   ...
-}: {
-  flake.homeConfigurations.tom = withSystem "x86_64-linux" ({pkgs, ...}:
-    inputs.home-manager.lib.homeManagerConfiguration {
-      inherit pkgs;
+}: let
+  system = "x86_64-linux";
+  pkgs = inputs.nixpkgs.legacyPackages.${system};
 
-      modules = [
-        inputs.nix-index-database.homeModules.default
-        inputs.nvf.homeManagerModules.nvf
+  publicHomeModule = {
+    imports = [
+      # External Home Manager modules.
+      inputs.nix-index-database.homeModules.default
+      inputs.nvf.homeManagerModules.nvf
 
-        config.flake.homeModules.profile
-        config.flake.homeModules.fonts
-        config.flake.homeModules.shell
-        config.flake.homeModules.ssh
-        config.flake.homeModules.cli-tools
-        config.flake.homeModules.nix-tools
-        config.flake.homeModules.kitty
-        config.flake.homeModules.fastfetch
-        config.flake.homeModules.yazi
-        config.flake.homeModules.niri
-        config.flake.homeModules.portals
-        config.flake.homeModules.btop
-        config.flake.homeModules.lazygit
-        config.flake.homeModules.toolbox
-        config.flake.homeModules.devenv
-        config.flake.homeModules.editor
-      ];
-    });
+      # Public tnxhm features.
+      config.flake.homeModules.profile
+      config.flake.homeModules.btop
+      config.flake.homeModules.cli-tools
+      config.flake.homeModules.devenv
+      config.flake.homeModules.editor
+      config.flake.homeModules.fastfetch
+      config.flake.homeModules.fonts
+      config.flake.homeModules.kitty
+      config.flake.homeModules.lazygit
+      config.flake.homeModules.niri
+      config.flake.homeModules.nix-tools
+      config.flake.homeModules.portals
+      config.flake.homeModules.shell
+      config.flake.homeModules.ssh
+      config.flake.homeModules.terminal
+      config.flake.homeModules.toolbox
+      config.flake.homeModules.yazi
+    ];
+  };
+in {
+  flake.homeModules.default = publicHomeModule;
+
+  flake.homeConfigurations.tom = inputs.home-manager.lib.homeManagerConfiguration {
+    inherit pkgs;
+
+    modules = [
+      publicHomeModule
+    ];
+  };
 }
