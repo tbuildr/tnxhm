@@ -1,11 +1,11 @@
-{...}: {
+{self, ...}: {
   flake.homeModules.terminal = {
     xdg.configFile = {
       "fastfetch/config.jsonc".source =
-        ../dotfiles/fastfetch/config.jsonc;
+        self + /dotfiles/fastfetch/config.jsonc;
 
       "kitty/kitty.conf".source =
-        ../dotfiles/kitty/kitty.conf;
+        self + /dotfiles/kitty/kitty.conf;
     };
   };
 }

@@ -1,11 +1,7 @@
-{
-  self,
-  lib,
-  ...
-}: {
-  flake.homeModules.niri = {
+{self, ...}: {
+  flake.homeModules.niri = {lib, ...}: {
     xdg.configFile."niri" = {
-      source = "${self}/dotfiles/niri";
+      source = self + /dotfiles/niri;
       recursive = true;
     };
 

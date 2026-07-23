@@ -1,11 +1,11 @@
-{...}: {
+{self, ...}: {
   flake.homeModules.shell = {
     xdg.configFile = {
       "starship/starship.toml".source =
-        ../dotfiles/starship/starship.toml;
+        self + /dotfiles/starship/starship.toml;
 
       "starship/starship-toolbox.toml".source =
-        ../dotfiles/starship/starship-toolbox.toml;
+        self + /dotfiles/starship/starship-toolbox.toml;
     };
 
     programs.fish = {
