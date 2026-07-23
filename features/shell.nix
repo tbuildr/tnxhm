@@ -25,11 +25,6 @@
         end
       '';
 
-      shellAbbrs = {
-        hms = "home-manager switch --flake ~/.config/home-manager#tom";
-        ykadd = "ssh-add ~/.ssh/id_ed25519_sk_github_yk_1";
-      };
-
       shellAliases = {
         ls = "eza --icons --group-directories-first";
         ll = "eza -lah --icons --group-directories-first --git";

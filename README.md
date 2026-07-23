@@ -494,7 +494,7 @@ The NVF environment also includes the Tree-sitter CLI.
 `features/toolbox.nix` defines a custom Fedora 44 Toolbx image:
 
 ```text
-localhost/toolbox-tom:44
+localhost/toolbox-dev:44
 ```
 
 The image is based on:
@@ -552,8 +552,8 @@ The feature also deploys:
 
 ```text
 ~/.config/containers/toolbox.conf
-~/.config/toolbox-tom/Containerfile
-~/.config/containers/systemd/toolbox-tom.build
+~/.config/toolbox-dev/Containerfile
+~/.config/containers/systemd/toolbox-dev.build
 ```
 
 ## SSH agent and YubiKey workflow

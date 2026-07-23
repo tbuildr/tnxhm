@@ -13,7 +13,6 @@
       inputs.nvf.homeManagerModules.nvf
 
       # Public tnxhm features.
-      config.flake.homeModules.profile
       config.flake.homeModules.btop
       config.flake.homeModules.cli-tools
       config.flake.homeModules.devenv
