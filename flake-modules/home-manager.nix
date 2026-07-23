@@ -3,16 +3,13 @@
   inputs,
   ...
 }: let
-  system = "x86_64-linux";
-  pkgs = inputs.nixpkgs.legacyPackages.${system};
-
   publicHomeModule = {
     imports = [
       # External Home Manager modules.
       inputs.nix-index-database.homeModules.default
       inputs.nvf.homeManagerModules.nvf
 
-      # Public tnxhm features.
+      # Reusable public features.
       config.flake.homeModules.btop
       config.flake.homeModules.cli-tools
       config.flake.homeModules.devenv
@@ -31,13 +28,6 @@
     ];
   };
 in {
+  # Reusable module imported by a separate user-specific wrapper.
   flake.homeModules.default = publicHomeModule;
-
-  flake.homeConfigurations.tom = inputs.home-manager.lib.homeManagerConfiguration {
-    inherit pkgs;
-
-    modules = [
-      publicHomeModule
-    ];
-  };
 }

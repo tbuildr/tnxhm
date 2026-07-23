@@ -48,6 +48,8 @@
         inputs.home-manager.flakeModules.home-manager
 
         ./flake-modules/home-manager.nix
+        ./flake-modules/templates.nix
+
         (inputs.import-tree ./features)
       ];
     };
