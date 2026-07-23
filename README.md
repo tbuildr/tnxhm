@@ -2,72 +2,90 @@
 
 ## Overview
 
-This repository contains my personal Nix Home Manager configuration for my
-Fedora 44 Atomic/tbzos desktop. See my repo:
-[tbzos](https://github.com/tbuildr/tbzos)
+# tnxhm
 
-It manages my user packages, shell environment, editor configuration and
-application dotfiles while leaving operating-system components in the immutable
-host image.
+My personal standalone Nix Home Manager configuration for Fedora Atomic and my
+custom `tbzos` image.
 
-The configuration currently targets:
+The repository uses **flake-parts**, **import-tree**, and a feature-oriented
+structure to manage my user environment while leaving operating-system
+responsibilities with Fedora and the immutable host image.
+
+## Overview
+
+This configuration targets:
 
 ```text
-System:         x86_64-linux
+Platform:       x86_64-linux
 Home profile:   tom
 Home directory: /var/home/tom
 State version:  26.05
+Host:           Fedora 44 Atomic / tbzos
 ```
 
-This is a personal configuration rather than a general-purpose Home Manager
-framework. It contains paths, commands and hardware-related assumptions that are
-specific to my setup.
+It manages:
 
-<div align="center">
-
-**A declarative user environment for Fedora Atomic/tbzos**
-
-Niri · Noctalia integration · NVF · Fish · Starship · Kitty · Yazi · Toolbx
-
-[![Nix](https://img.shields.io/badge/Nix-Flakes-5277C3?logo=nixos&logoColor=white)](https://nixos.org/)
-[![Home Manager](https://img.shields.io/badge/Home%20Manager-26.05-7EBAE4?logo=nixos&logoColor=white)](https://github.com/nix-community/home-manager)
-[![Niri](https://img.shields.io/badge/Wayland-Niri-8A2BE2)](https://github.com/niri-wm/niri)
-[![Neovim](https://img.shields.io/badge/Neovim-NVF-57A143?logo=neovim&logoColor=white)](https://github.com/NotAShelf/nvf)
-
-</div>
-
----
-
-## What this repository actually manages
-
-Home Manager actively manages:
-
-- the `tom` Home Manager profile;
-- packages from `modules/packages.nix`;
-- a custom Fedora 44 Toolbx image definition;
+- user packages and command-line tools;
+- Fish, Starship, Zoxide and Devenv integration;
 - Neovim through NVF;
-- Fish, Starship, Zoxide, Direnv and Nix Index;
+- wrapped and preconfigured applications;
+- native modular Niri configuration;
+- Kitty configuration;
+- desktop portal preferences;
+- a custom Fedora Toolbx image;
 - an SSH agent and graphical YubiKey askpass helper;
-- Fastfetch, Kitty, Niri, Starship and Yazi dotfiles;
-- user environment variables and Fish aliases/abbreviations.
+- user environment variables and Home Manager activation.
 
-The repository **does not install or fully configure the entire desktop**.
+This is a personal configuration. It contains usernames, paths, package choices,
+commands and host assumptions specific to my system.
 
-The tbzos host image is expected to provide system-level applications and
-services such as Niri, Noctalia, Kitty, Fastfetch, Fuzzel, Swaylock, Podman,
-Toolbx, Mullvad and the scripts in `~/.local/bin`.
+## Architecture
 
----
+The configuration is divided into three layers:
+
+```text
+Fedora Atomic / tbzos
+├── kernel, drivers and graphics stack
+├── Niri and desktop session
+├── Kitty and system applications
+├── Podman and Toolbx
+├── systemd system services
+├── SELinux, PAM and hardware integration
+└── immutable operating-system image
+
+flake-parts
+├── assembles flake outputs
+├── automatically imports feature modules
+├── builds configured application packages
+├── exposes runnable apps
+├── exposes the repository formatter
+└── connects per-system packages to Home Manager
+
+Home Manager
+├── installs packages into the user profile
+├── activates configuration files
+├── configures Fish and Starship
+├── manages user services
+├── manages environment variables
+└── provides generations and rollback
+```
+
+Home Manager is deliberately retained as the activation layer. Flake-parts
+builds and organises the configuration, while Home Manager safely applies it to
+the user environment.
 
 ## Repository structure
 
 ```text
 .
+├── configs
+│   └── fastfetch
+│       └── config.json
+│
 ├── dotfiles
-│   ├── fastfetch
-│   │   └── config.jsonc
 │   ├── kitty
 │   │   └── kitty.conf
+│   │
 │   ├── niri
 │   │   ├── config.kdl
 │   │   └── conf
@@ -81,390 +99,382 @@ Toolbx, Mullvad and the scripts in `~/.local/bin`.
 │   │       ├── monitors.kdl
 │   │       ├── theme.kdl
 │   │       └── windowrules.kdl
-│   ├── starship
-│   │   ├── starship.toml
-│   │   └── starship-toolbox.toml
-│   └── yazi
-│       ├── init.lua
-│       └── yazi.toml
-├── modules
-│   ├── nvf.nix
-│   ├── packages.nix
-│   └── toolbox.nix
+│   │
+│   └── starship
+│       ├── starship.toml
+│       └── starship-toolbox.toml
+│
+├── features
+│   ├── btop.nix
+│   ├── cli-tools.nix
+│   ├── devenv.nix
+│   ├── editor.nix
+│   ├── fastfetch.nix
+│   ├── fonts.nix
+│   ├── lazygit.nix
+│   ├── niri.nix
+│   ├── nix-tools.nix
+│   ├── portals.nix
+│   ├── profile.nix
+│   ├── shell.nix
+│   ├── ssh.nix
+│   ├── terminal.nix
+│   ├── toolbox.nix
+│   └── yazi.nix
+│
+├── flake-modules
+│   └── home-manager.nix
+│
 ├── flake.lock
 ├── flake.nix
 └── README.md
 ```
 
-Backup files in some dotfile directories are intentionally omitted from the tree
-above.
+## Flake design
 
----
+### flake-parts
 
-## Flake inputs
+`flake.nix` is intentionally small. It defines inputs, supported systems and the
+top-level module imports.
 
-The flake uses:
-
-- `nixpkgs` from `nixos-26.05`;
-- Home Manager from `release-26.05`;
-- NVF from `NotAShelf/nvf`;
-- `nix-index-database`.
-
-The active Home Manager module list is:
+The main imports are:
 
 ```nix
-nix-index-database.homeModules.default
-nvf.homeManagerModules.nvf
-./modules/packages.nix
-./modules/toolbox.nix
-./modules/nvf.nix
+inputs.home-manager.flakeModules.home-manager
+./flake-modules/home-manager.nix
+(inputs.import-tree ./features)
 ```
 
-Fish, Starship, Direnv, the SSH agent and the XDG dotfile links are currently
-defined directly in `flake.nix`.
+`flake-modules/home-manager.nix` creates the `tom` standalone Home Manager
+configuration and selects the reusable modules that belong to it.
 
----
+### import-tree
 
-# Desktop configuration
+Every `.nix` file under `features/` is a top-level flake-parts module and is
+imported automatically by `import-tree`.
+
+Each feature can define one or more of:
+
+```nix
+flake.homeModules
+perSystem.packages
+perSystem.apps
+perSystem.formatter
+```
+
+This keeps features self-contained without maintaining a long list of file
+imports in `flake.nix`.
+
+### Feature modules
+
+A typical feature exposes a reusable Home Manager module:
+
+```nix
+{
+  flake.homeModules.example = {
+    # Home Manager configuration
+  };
+}
+```
+
+Features that build configured packages use:
+
+```nix
+perSystem.packages
+```
+
+and connect those packages to Home Manager with:
+
+```nix
+moduleWithSystem
+self'.packages
+```
+
+## Wrapped applications
+
+The repository uses `nix-wrapper-modules` to build selected applications with
+their configuration embedded in the Nix store.
+
+This removes the need for mutable configuration files under `~/.config` for
+those applications.
+
+### Btop
+
+`features/btop.nix` builds a configured Btop package with:
+
+- Vim navigation keys;
+- true colour;
+- rounded corners;
+- terminal synchronisation;
+- a two-second update interval;
+- transparent terminal background support.
+
+Build it independently with:
+
+```bash
+nix build .#btop
+./result/bin/btop
+```
+
+### Lazygit
+
+`features/lazygit.nix` generates an immutable YAML configuration and launches
+Lazygit with `--use-config-file`.
+
+The configuration enables Nerd Font version 3 and adds custom pull commands,
+including recursive submodule pulling.
+
+Build it independently with:
+
+```bash
+nix build .#lazygit
+./result/bin/lazygit
+```
+
+Lazygit may still maintain writable runtime state, but its main configuration is
+embedded in the package.
+
+### Fastfetch
+
+`features/fastfetch.nix` reads:
+
+```text
+configs/fastfetch/config.json
+```
+
+and builds a wrapped Fastfetch package whose configuration is stored in the Nix
+derivation.
+
+The configuration includes:
+
+- a host-provided operating-system logo;
+- Kitty image protocol support;
+- a Gruvbox-inspired colour palette;
+- grouped login, hardware, network, peripheral, media and time sections;
+- Nerd Font icons;
+- percentage bars for memory and disk usage;
+- JEDEC sizes.
+
+The logo remains image-specific:
+
+```text
+/usr/share/fastfetch/os-logo.png
+```
+
+This allows the same Home Manager configuration to display branding supplied by
+different Fedora or bootc images.
+
+Bazzite supplies a Fish function that normally forces its stock Fastfetch
+configuration. The Home Manager Fish feature overrides that function while still
+resolving the wrapped executable through `PATH`.
+
+Build it independently with:
+
+```bash
+nix build .#fastfetch
+./result/bin/fastfetch
+```
+
+### Yazi
+
+`features/yazi.nix` builds Yazi with its TOML and Lua configuration embedded.
+
+The configuration:
+
+- displays hidden files;
+- retains Yazi's normal three-column layout;
+- adds a custom `ls_l` line mode;
+- displays file permissions;
+- displays human-readable file sizes;
+- displays modification timestamps.
+
+The wrapper sets `YAZI_CONFIG_HOME` to an immutable directory in the Nix store.
+
+Build it independently with:
+
+```bash
+nix build .#yazi
+./result/bin/yazi
+```
 
 ## Niri
 
-Home Manager recursively links `dotfiles/niri` to:
+Niri itself is supplied by Fedora rather than Nix.
+
+The repository deliberately keeps the configuration in native KDL instead of
+translating it into wrapper-specific Nix attributes. Native KDL remains easier
+to compare with Niri documentation and is already well suited to modular
+configuration.
+
+Home Manager recursively deploys:
+
+```text
+dotfiles/niri
+```
+
+to:
 
 ```text
 ~/.config/niri
 ```
 
-The top-level `config.kdl` is deliberately small and acts as a module loader:
+The small top-level `config.kdl` loads the individual modules under `conf/`.
 
-```text
-config.kdl
-└── conf/
-    ├── animations.kdl
-    ├── autostart.kdl
-    ├── decorations.kdl
-    ├── environment.kdl
-    ├── inputs.kdl
-    ├── keybinds.kdl
-    ├── monitors.kdl
-    ├── theme.kdl
-    └── windowrules.kdl
-```
-
-### Active Niri behaviour
-
-The active configuration includes:
+The active configuration covers:
 
 - British keyboard layout;
-- Num Lock enabled;
-- touchpad tap-to-click and natural scrolling;
-- screenshots saved under `~/Pictures/Screenshots`;
-- dark Adwaita GTK theme;
-- client-side decorations disabled where supported;
-- eight-pixel gaps;
-- one-pixel blue focus ring;
-- half-width default columns;
-- one-third, one-half and two-thirds column width presets;
-- rounded five-pixel window corners;
-- Kitty transparency at 90%;
-- Firefox picture-in-picture windows opened floating;
-- direct scan-out enabled;
-- a Noctalia backdrop layer rule.
+- touchpad configuration;
+- animations;
+- window decorations;
+- environment variables;
+- startup applications;
+- keybindings;
+- workspace and window behaviour;
+- window rules;
+- theme settings;
+- optional monitor configuration.
 
-The monitor file currently contains a commented example output block rather than
-an active fixed monitor layout.
-
-An NVIDIA-specific environment file is retained as:
+An NVIDIA-specific alternative environment file is retained but is not loaded by
+the active configuration:
 
 ```text
 dotfiles/niri/conf/environment.kdl.nvidia
 ```
 
-It is **not** included by the active `config.kdl`. The active file is
-`environment.kdl`.
+The configuration is validated using Fedora's actual Niri binary rather than a
+potentially different Nixpkgs build.
 
-### Niri startup
-
-Niri currently starts:
-
-```text
-noctalia
-~/.local/bin/mullvad-vpn-wrapper.sh
-~/.local/bin/rclone-mount-dropbox.sh
-```
-
-The update checker, Steam startup and SELinux notification examples are present
-but commented out.
-
-Noctalia itself is not configured by Home Manager in this repository. Niri only
-launches it and sends commands to its CLI.
-
-### Main desktop bindings
-
-| Binding       | Action                                   |
-| ------------- | ---------------------------------------- |
-| `Mod+Space`   | Toggle the Noctalia launcher             |
-| `Mod+S`       | Toggle the Noctalia control centre       |
-| `Mod+Shift+S` | Toggle Noctalia settings                 |
-| `Mod+Return`  | Open Kitty                               |
-| `Mod+D`       | Open Fuzzel                              |
-| `Super+Alt+L` | Lock with Swaylock                       |
-| `Mod+O`       | Toggle the Niri overview                 |
-| `Mod+Q`       | Close the focused window                 |
-| `Mod+T`       | Toggle floating mode                     |
-| `Mod+Shift+T` | Switch focus between floating and tiling |
-| `Mod+F`       | Maximise the focused column              |
-| `Mod+Shift+F` | Fullscreen the focused window            |
-| `Mod+M`       | Maximise the window to the output edges  |
-| `Mod+W`       | Toggle tabbed column display             |
-| `Print`       | Interactive screenshot                   |
-| `Ctrl+Print`  | Screenshot the output                    |
-| `Alt+Print`   | Screenshot the focused window            |
-
-Window and workspace navigation is available through both arrow keys and
-Vim-style `H`, `J`, `K`, `L` bindings. Workspaces 1–9 can be focused directly,
-and `Mod+Ctrl+1` through `Mod+Ctrl+9` move the current column.
-
-### Global copy and paste
-
-The Niri configuration reserves:
-
-```text
-Mod+C    Copy
-Mod+V    Paste
-```
-
-`Mod+C` copies the current Wayland primary selection into the regular clipboard
-using `wl-paste` and `wl-copy`.
-
-`Mod+V` uses `wtype` to send a normal `Ctrl+V` event to the focused application.
-
-Because `Mod+V` is reserved for paste, Niri's floating-window binding was moved
-from `Mod+V` to `Mod+T`.
-
-> The copy binding expects `wl-copy` and `wl-paste` to be available on the host.
-> `wtype` is installed by `modules/packages.nix`.
-
-Validate the active configuration with:
+Validate it with:
 
 ```bash
-niri validate
+nix run .#niri-validate
 ```
 
----
+or directly:
 
-# Shell and terminal
+```bash
+/usr/bin/niri validate \
+  -c ~/.config/niri/config.kdl
+```
 
-## Fish
+Home Manager also validates the configuration before activation.
 
-Fish is enabled through Home Manager and is the main interactive shell.
+## Fish and Starship
 
-The configuration:
+Fish is the main interactive shell.
 
-- clears the default Fish greeting;
-- runs Fastfetch when an interactive shell starts;
-- adds `~/.local/bin` to the user session path;
-- chooses a different Starship configuration inside Toolbx;
-- integrates Direnv, Nix Index, Starship and Zoxide.
+The shell feature:
 
-### Fish abbreviations
+- disables the default Fish greeting;
+- starts Fastfetch in interactive shells;
+- configures aliases and abbreviations;
+- enables Starship;
+- enables Zoxide;
+- integrates Devenv;
+- selects the correct Starship configuration for the current environment.
 
-| Abbreviation | Expands to                                               |
-| ------------ | -------------------------------------------------------- |
-| `hms`        | `home-manager switch --flake ~/.config/home-manager#tom` |
-| `ykadd`      | `ssh-add ~/.ssh/id_ed25519_sk_github_yk_1`               |
+### Starship selection
 
-### Fish aliases
-
-| Alias       | Command                                            |
-| ----------- | -------------------------------------------------- |
-| `ls`        | `eza --icons --group-directories-first`            |
-| `ll`        | `eza -lah --icons --group-directories-first --git` |
-| `la`        | `eza -a --icons --group-directories-first`         |
-| `lt`        | `eza --tree --icons --level=2`                     |
-| `bls`       | `/bin/ls`                                          |
-| `bvi`       | `/bin/vi`                                          |
-| `bat`       | `bat --paging=never`                               |
-| `fastfetch` | `/usr/bin/fastfetch`                               |
-| `neofetch`  | `/usr/bin/fastfetch`                               |
-
-The explicit `/usr/bin/fastfetch` aliases override Bazzite's stock shell aliases
-and ensure the repository's Fastfetch configuration is used.
-
-## Starship
-
-Starship is enabled with Fish integration.
-
-Two prompt files are deployed:
+The normal host shell uses:
 
 ```text
 ~/.config/starship/starship.toml
+```
+
+Toolbox shells use:
+
+```text
 ~/.config/starship/starship-toolbox.toml
 ```
 
-Fish checks for `TOOLBOX_PATH`:
+Devenv projects may provide their own `STARSHIP_CONFIG`, which is preserved.
 
-```fish
-if set -q TOOLBOX_PATH
-    set -gx STARSHIP_CONFIG "$HOME/.config/starship/starship-toolbox.toml"
-else
-    set -gx STARSHIP_CONFIG "$HOME/.config/starship/starship.toml"
-end
+The selection logic distinguishes:
+
+```text
+DEVENV_ROOT   project-specific Devenv prompt
+TOOLBOX_PATH  Toolbox prompt
+otherwise     normal host prompt
 ```
 
-### Host prompt
+Starship remains file-managed rather than wrapped because the prompt
+configuration changes dynamically between the host, Toolbox and Devenv
+environments.
 
-The host prompt uses a Gruvbox Dark powerline design and displays:
+### Useful Fish commands
 
-- operating system and username;
-- current directory;
-- Git branch and status;
-- detected development language versions;
-- Docker, Conda or Pixi context;
-- current time;
-- success, error and Vim-mode prompt indicators.
+```text
+hms       home-manager switch --flake ~/.config/home-manager#tom
+ykadd     ssh-add ~/.ssh/id_ed25519_sk_github_yk_1
 
-### Toolbx prompt
+ls        eza --icons --group-directories-first
+ll        eza -lah --icons --group-directories-first --git
+la        eza -a --icons --group-directories-first
+lt        eza --tree --icons --level=2
 
-The Toolbx prompt uses a deliberately different blue/grey powerline design so
-container shells are visually distinct from the host.
+lgit      lazygit
+ldoc      lazydocker
+y         yazi
+neofetch  wrapped Fastfetch
+```
 
 ## Kitty
 
-Home Manager deploys:
+Kitty is currently supplied by the Fedora host.
+
+Home Manager manages its minimal configuration:
 
 ```text
 ~/.config/kitty/kitty.conf
 ```
 
-The current Kitty configuration is intentionally minimal:
+Current font configuration:
 
 ```text
 Font: JetBrainsMono Nerd Font Mono
-Size: 9.0
+Size: 9
 ```
 
-The font itself is installed through `modules/packages.nix`, and Fontconfig is
-enabled in the Home Manager profile.
+The font package is installed through the `fonts` feature and Fontconfig is
+enabled for the Home Manager profile.
 
-Kitty is expected to be installed by the host image; this repository manages its
-font configuration only.
+## Neovim with NVF
 
----
-
-# Fastfetch
-
-Home Manager deploys:
+Neovim is built and configured declaratively through NVF in:
 
 ```text
-~/.config/fastfetch/config.jsonc
+features/editor.nix
 ```
 
-The configuration uses:
+The configuration provides a LazyVim-inspired environment while remaining fully
+expressed in Nix.
 
-- a custom os PNG logo (from /usr/share/fastfetch/os-logo.png)
-- Kitty's terminal image protocol;
-- a Gruvbox-inspired colour palette;
-- grouped system, hardware, network, peripheral, media and date/time sections;
-- JEDEC sizes such as GB rather than GiB;
-- Nerd Font icons;
-- memory and disk percentage bars.
+Highlights include:
 
-Fastfetch itself is expected at:
-
-```text
-/usr/bin/fastfetch
-```
-
-It is supplied by the tbzos host rather than installed in
-`modules/packages.nix`.
-
----
-
-# Neovim with NVF
-
-## Overview
-
-Neovim is configured declaratively through NVF in:
-
-```text
-modules/nvf.nix
-```
-
-The configuration is intended to provide a LazyVim-style working environment
-while remaining fully expressed in Nix.
-
-`vi`, `vim` and `nvim` all open the NVF-managed editor.
-
-### Core editor settings
-
+- Tokyo Night Moon theme;
 - relative line numbers;
-- smart-case searching;
 - persistent undo;
-- two-space indentation;
-- spaces instead of tabs;
-- splits open below and to the right;
-- cursor line and permanent sign column;
-- eight lines of scroll context;
-- 200 ms update time;
-- 300 ms mapping timeout;
-- space as the leader key;
-- comma as the local leader.
-
-### Wayland clipboard
-
-NVF uses the system clipboard through `wl-copy` and the `unnamedplus` register.
-
-A small Lua hook copies a completed mouse visual selection into Wayland's
-primary selection. This allows Niri's global `Mod+C` binding to work with text
-selected using the mouse inside Neovim.
-
-### Theme and UI
-
-The editor uses:
-
-```text
-Theme: Tokyo Night
-Style: Moon
-Transparency: Disabled
-```
-
-Enabled UI components include:
-
-- Alpha dashboard with a custom NVF ASCII logo;
-- Lualine;
-- Bufferline;
+- system clipboard integration through `wl-copy`;
+- Blink completion;
+- LuaSnip and Friendly Snippets;
+- LSP support;
+- formatting on save;
+- Tree-sitter;
 - Neo-tree;
 - Telescope;
 - Which-key;
+- Bufferline;
+- Lualine;
 - Noice;
-- Illuminate;
-- Indent Blankline;
-- Web Devicons;
-- Fidget;
-- bordered UI windows;
-- Snacks notifications.
+- Snacks notifications;
+- Gitsigns;
+- Diffview;
+- Trouble diagnostics;
+- Toggleterm;
+- integrated Lazygit;
+- integrated Yazi.
 
-`nvim-notify` is disabled because Snacks provides notifications.
-
-### Completion and editing
-
-- Blink CMP;
-- Friendly Snippets;
-- LuaSnip;
-- nvim-autopairs;
-- Comment.nvim;
-- Todo Comments;
-- surround;
-- Leap;
-- Diffview.
-
-### LSP and language support
-
-LSP support, formatting on save, Tree-sitter and additional diagnostics are
-enabled.
-
-Configured languages:
+Configured languages include:
 
 - Nix;
 - Bash;
@@ -475,127 +485,25 @@ Configured languages:
 - JSON;
 - TOML.
 
-TypeScript, HTML, CSS, Python, Docker and YAML are left as commented future
-options.
+The NVF environment also includes the Tree-sitter CLI.
 
-The `tree-sitter` CLI is added to NVF's wrapped environment.
+`vi`, `vim` and `nvim` all resolve to the NVF-managed editor.
 
-### Git and terminal integration
+## Toolbx and Podman
 
-- Git integration;
-- Gitsigns;
-- Toggleterm;
-- LazyGit inside Toggleterm;
-- Trouble diagnostics;
-- Diffview.
-
-Neogit is deliberately disabled because LazyGit covers the preferred Git
-workflow.
-
-## NVF key mappings
-
-### Clipboard
-
-| Mapping        | Mode          | Action                                        |
-| -------------- | ------------- | --------------------------------------------- |
-| `Ctrl+C`       | Visual/Select | Copy selection to the system clipboard        |
-| `Ctrl+Shift+C` | Visual/Select | Copy selection to the system clipboard        |
-| `Ctrl+V`       | Normal        | Paste after the cursor                        |
-| `Ctrl+V`       | Visual        | Replace the selection with clipboard contents |
-| `Ctrl+V`       | Insert        | Paste from the clipboard                      |
-| `Ctrl+V`       | Command       | Paste from the clipboard                      |
-| `<leader>v`    | Normal        | Enter Visual Block mode                       |
-
-### Navigation and tools
-
-| Mapping      | Action                     |
-| ------------ | -------------------------- |
-| `<leader>e`  | Toggle Neo-tree            |
-| `<leader>ff` | Find files                 |
-| `<leader>fg` | Search text                |
-| `<leader>fb` | Find buffers               |
-| `<leader>fr` | Open recent files          |
-| `<leader>gg` | Open LazyGit               |
-| `<leader>xx` | Toggle Trouble diagnostics |
-| `Shift+H`    | Previous buffer            |
-| `Shift+L`    | Next buffer                |
-| `<leader>bd` | Delete the current buffer  |
-| `Esc`        | Clear search highlighting  |
-
-## Yazi inside Neovim
-
-Yazi is integrated through `yazi.nvim` and opens in a floating window.
-
-| Mapping     | Action                                  |
-| ----------- | --------------------------------------- |
-| `<leader>y` | Open Yazi focused on the current file   |
-| `<leader>Y` | Open Yazi in Neovim's current directory |
-| `Ctrl+Up`   | Reopen the previous Yazi session        |
-
-Additional settings:
-
-- floating window scale: `0.9`;
-- rounded floating border;
-- Yazi does not replace Neo-tree as the handler for `nvim .`;
-- Snacks is initialised for Yazi but inline image rendering is disabled.
-
-Run NVF's health checks with:
-
-```vim
-:checkhealth
-```
-
----
-
-# Standalone Yazi configuration
-
-Yazi is installed through `modules/packages.nix` and configured through:
-
-```text
-~/.config/yazi/init.lua
-~/.config/yazi/yazi.toml
-```
-
-The manager:
-
-- shows hidden files;
-- keeps the normal three-column layout;
-- uses a custom `ls_l` line mode.
-
-The custom line mode displays:
-
-```text
-permissions    human-readable size    modification date
-```
-
-This provides an `ls -l`-style summary without replacing Yazi's normal
-three-pane file manager layout.
-
----
-
-# Toolbx and Podman
-
-## Custom Fedora 44 Toolbx image
-
-`modules/toolbox.nix` declaratively creates:
-
-```text
-~/.config/toolbox-tom/Containerfile
-```
-
-The image is named:
+`features/toolbox.nix` defines a custom Fedora 44 Toolbx image:
 
 ```text
 localhost/toolbox-tom:44
 ```
 
-It is based on:
+The image is based on:
 
 ```text
 registry.fedoraproject.org/fedora-toolbox:44
 ```
 
-Packages installed inside the image:
+It includes:
 
 ```text
 bat
@@ -612,346 +520,324 @@ ripgrep
 zoxide
 ```
 
-The image also creates:
+The image creates:
 
 ```text
 /nix -> /run/host/nix
 ```
 
-This exposes the host Nix store at the path expected by Home Manager symlinks
-and Nix-installed programs inside Toolbx.
+This exposes the host Nix store at the path expected by Home Manager links and
+Nix-installed programs inside Toolbx.
 
-## Default Toolbx image
-
-Home Manager writes:
-
-```text
-~/.config/containers/toolbox.conf
-```
-
-with `localhost/toolbox-tom:44` as the default image for newly created Toolbx
-containers.
-
-## Building the image
-
-The module adds this command to the Home Manager profile:
+The feature provides:
 
 ```bash
 toolbox-image-build
 ```
 
-It builds with Podman using:
+It is also available as a flake package and app:
+
+```bash
+nix build .#toolbox-image-build
+nix run .#toolbox-image-build
+```
+
+The generated Podman build uses:
 
 - `--pull=newer`;
 - `--squash`;
 - the declaratively generated Containerfile.
 
-A Podman Quadlet build definition is also deployed to:
+The feature also deploys:
 
 ```text
+~/.config/containers/toolbox.conf
+~/.config/toolbox-tom/Containerfile
 ~/.config/containers/systemd/toolbox-tom.build
 ```
 
-After building the image, a new container can use the configured default:
+## SSH agent and YubiKey workflow
 
-```bash
-toolbox create
-```
+Home Manager enables a user SSH agent with a maximum identity lifetime of 30
+days.
 
-Existing Toolbx containers are not rebuilt automatically when the image changes.
+A generated `SSH_ASKPASS` wrapper:
 
-## Podman Docker socket
-
-The user environment defines:
-
-```text
-DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
-```
-
-Docker-compatible clients can therefore use the rootless Podman socket when the
-corresponding user socket is running.
-
----
-
-# SSH agent and YubiKey workflow
-
-Home Manager enables a user SSH agent with a maximum identity lifetime of:
-
-```text
-2592000 seconds
-30 days
-```
-
-A generated `SSH_ASKPASS` wrapper opens a Zenity password dialog titled:
-
-```text
-YubiKey FIDO2
-```
-
-The wrapper imports the active Wayland/X11 and D-Bus session variables from the
-user systemd environment before launching Zenity.
+- imports the active graphical-session environment from user systemd;
+- launches a Zenity password dialog;
+- uses the title `YubiKey FIDO2`.
 
 The Fish abbreviation:
 
-```bash
+```text
 ykadd
 ```
 
-expands to:
-
-```bash
-ssh-add ~/.ssh/id_ed25519_sk_github_yk_1
-```
-
-This adds the local security-key SSH stub to the agent.
-
-The long agent lifetime does not remove the YubiKey's PIN or physical-touch
-requirements, and the key still needs to be added again after a reboot.
-
-Private keys, PINs and secret material are not stored in this repository.
-
----
-
-# Direnv, Nix Index and `comma`
-
-## Direnv
-
-The profile enables:
-
-- Direnv;
-- `nix-direnv`;
-- Fish integration.
-
-Projects containing an approved `.envrc` can automatically enter their Nix
-development environment.
-
-## Nix Index
-
-`nix-index-database` supplies a pre-generated package index, and Nix Index is
-integrated with Fish.
-
-## `comma`
-
-The `comma` command can run a package temporarily without adding it permanently
-to the Home Manager profile:
-
-```bash
-, cowsay "hello"
-```
-
-After that command exits, `cowsay` is not installed as a normal persistent
-profile package.
-
----
-
-# Installed Home Manager packages
-
-`modules/packages.nix` currently installs:
-
-| Category                     | Packages                                                           |
-| ---------------------------- | ------------------------------------------------------------------ |
-| Nix development              | `alejandra`, `deadnix`, `nix-output-monitor`, `nix-tree`, `statix` |
-| Terminal utilities           | `bat`, `eza`, `fd`, `ripgrep`, `zoxide`                            |
-| Monitoring                   | `btop`                                                             |
-| Git/container TUI tools      | `lazygit`, `lazydocker`                                            |
-| Editor and terminal workflow | `neovim`, `tmux`, `yazi`                                           |
-| File synchronisation         | `rclone`                                                           |
-| Wayland input                | `wtype`                                                            |
-| Font                         | `nerd-fonts.jetbrains-mono`                                        |
-
-Fontconfig is enabled so applications can locate the installed Nerd Font.
-
-Some packages are installed without a dedicated Home Manager program
-configuration. For example, `tmux` is installed, but its commented example
-configuration in `flake.nix` is not currently active.
-
----
-
-# Environment variables
-
-The profile sets:
+adds:
 
 ```text
-EDITOR=nvim
-VISUAL=nvim
-DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+~/.ssh/id_ed25519_sk_github_yk_1
 ```
 
-The user session path also includes:
+to the agent.
+
+The long agent lifetime does not disable YubiKey PIN or touch requirements. The
+key must still be added after reboot.
+
+No private keys, PINs or other secret material are stored in this repository.
+
+## Nix tooling
+
+The `nix-tools` feature installs:
 
 ```text
-$HOME/.local/bin
+alejandra
+deadnix
+nix-output-monitor
+nix-tree
+statix
 ```
 
-This is where the Niri startup wrappers referenced by the configuration are
-expected to live.
+It also enables:
 
----
+- `nh`;
+- Nix Index;
+- Fish integration for Nix Index;
+- the `comma` command.
 
-# Installation and activation
+Alejandra is exposed as the flake formatter.
 
-## Clone
-
-The repository is intended to live at:
-
-```text
-~/.config/home-manager
-```
-
-Clone it with:
+Format the repository with:
 
 ```bash
-git clone git@github.com:tbuildr/tnxhm.git ~/.config/home-manager
+nix fmt .
+```
+
+## CLI tools
+
+The general CLI feature installs tools including:
+
+```text
+bat
+eza
+fd
+lazydocker
+rclone
+ripgrep
+tmux
+wtype
+```
+
+Configured applications such as Btop, Lazygit, Fastfetch and Yazi are supplied
+by their own features rather than the generic package list.
+
+## Devenv
+
+Devenv is installed through its own feature.
+
+Fish loads the Devenv hook after its normal interactive-shell configuration,
+allowing trusted projects to enter their environment automatically.
+
+Project-specific Starship configuration is preserved when `DEVENV_ROOT` is set.
+
+## Desktop portals
+
+The portal feature deploys a Niri-specific preference file using:
+
+```ini
+[preferred]
+default=gnome;gtk;
+org.freedesktop.impl.portal.Access=gtk;
+org.freedesktop.impl.portal.Notification=gtk;
+org.freedesktop.impl.portal.Secret=gnome-keyring;
+org.freedesktop.impl.portal.FileChooser=gtk;
+```
+
+This ensures GTK provides the file chooser while retaining suitable GNOME portal
+implementations for the remaining interfaces.
+
+## Flake inputs
+
+The main inputs are:
+
+```text
+nixpkgs             nixos-26.05
+home-manager        release-26.05
+flake-parts
+import-tree
+nix-index-database
+NVF
+nix-wrapper-modules
+```
+
+All inputs are pinned by `flake.lock`.
+
+## Installation
+
+This repository assumes Nix with flakes enabled and standalone Home Manager
+installed.
+
+Clone it to the expected location:
+
+```bash
+git clone https://github.com/tbuildr/tnxhm \
+  ~/.config/home-manager
+
 cd ~/.config/home-manager
 ```
 
-## Review personal values
-
-Before using this on another machine, review at least:
-
-```text
-homeConfigurations.tom
-home.username
-home.homeDirectory
-home.stateVersion
-the YubiKey SSH key-stub path
-the Fedora Toolbx release
-Niri startup scripts
-Niri monitor and graphics settings
-```
-
-## Apply
-
-With Home Manager already available:
+Inspect the flake:
 
 ```bash
-home-manager switch --flake ~/.config/home-manager#tom
+nix flake show
 ```
 
-Or use the Fish abbreviation after the first activation:
+Build without activating:
 
 ```bash
-hms
+home-manager build --flake .#tom
 ```
 
----
-
-# Updating
-
-Update all locked flake inputs:
-
-```bash
-cd ~/.config/home-manager
-nix flake update
-```
-
-Check that the flake evaluates:
+Run checks:
 
 ```bash
 nix flake check
 ```
 
-Apply the new generation:
+Activate:
 
 ```bash
+home-manager switch --flake .#tom
+```
+
+After the initial activation, the Fish abbreviation can be used:
+
+```fish
 hms
 ```
 
-Review and commit the changes:
+## Useful commands
+
+### Home Manager
 
 ```bash
-git status
-git diff
-git add .
-git commit
-git push
+home-manager build --flake .#tom
+home-manager switch --flake .#tom
+home-manager generations
 ```
 
----
+### Flake maintenance
 
-# Useful commands
-
-| Command                    | Purpose                                   |
-| -------------------------- | ----------------------------------------- |
-| `hms`                      | Apply the `tom` Home Manager profile      |
-| `home-manager generations` | List Home Manager generations             |
-| `nix flake check`          | Evaluate flake checks                     |
-| `nix flake update`         | Update locked inputs                      |
-| `niri validate`            | Validate the Niri configuration           |
-| `toolbox-image-build`      | Rebuild `localhost/toolbox-tom:44`        |
-| `ykadd`                    | Add the YubiKey SSH key stub to the agent |
-| `, <command>`              | Temporarily run a command from Nixpkgs    |
-| `nvim +checkhealth`        | Open Neovim and run health checks         |
-
----
-
-# Host dependencies and assumptions
-
-Several commands referenced by these dotfiles are deliberately expected to come
-from the tbzos host rather than this Home Manager profile:
-
-- `niri`;
-- `noctalia`;
-- `kitty`;
-- `/usr/bin/fastfetch`;
-- `fuzzel`;
-- `swaylock`;
-- `wl-copy` and `wl-paste`;
-- `wpctl`;
-- `playerctl`;
-- `podman`;
-- `toolbox`;
-- `zenity`;
-- Mullvad VPN;
-- the wrapper scripts under `~/.local/bin`.
-
-This separation is intentional:
-
-```text
-tbzos image   system packages, drivers, services and desktop executables
-Home Manager     user packages, editor, shell and dotfiles
-Toolbx image     mutable Fedora development environment
+```bash
+nix flake check
+nix flake update
+nix fmt .
 ```
 
----
+### Wrapped packages
 
-# Not currently managed
+```bash
+nix build .#btop
+nix build .#lazygit
+nix build .#fastfetch
+nix build .#yazi
+```
 
-The repository contains comments or placeholders for future work, but the
-following are not currently active Home Manager configurations:
+### Flake apps
 
-- Git identity and Git settings;
-- a declarative Tmux configuration;
-- Noctalia's own configuration;
-- a fixed Niri monitor layout;
-- the NVIDIA-specific Niri environment file;
-- the commented NVF language modules for TypeScript, HTML, CSS, Python, Docker
-  and YAML.
+```bash
+nix run .#toolbox-image-build
+nix run .#niri-validate
+```
 
----
+### Cleanup
 
-# Personal conventions
+Remove a temporary `result` link created by `nix build`:
 
-- `vi`, `vim` and `nvim` all open NVF.
-- Fish is the interactive shell.
-- Kitty is the primary terminal.
-- Niri is the compositor.
-- Noctalia supplies the desktop shell.
-- Yazi is the terminal file manager.
-- LazyGit is the preferred Git TUI.
-- Podman provides the Docker-compatible socket.
-- User configuration belongs in Home Manager where practical.
-- System configuration belongs in the tbzos image.
-- Secrets and private keys do not belong in Git.
+```bash
+rm -f result
+```
 
----
+Clean unused Home Manager generations with `nh`:
+
+```bash
+nh clean user
+```
+
+## Host dependencies
+
+This configuration expects the Fedora or `tbzos` host to supply system-level
+components such as:
+
+- Niri and its session integration;
+- Kitty;
+- Noctalia;
+- Fuzzel;
+- Swaylock;
+- Podman;
+- Toolbx;
+- graphical and hardware drivers;
+- the system Fastfetch logo;
+- user scripts referenced from `~/.local/bin`.
+
+This repository is not intended to turn Fedora into NixOS. Fedora remains
+responsible for the operating system, while Nix and Home Manager manage the user
+environment.
+
+## Testing changes
+
+Changes are normally developed on short-lived Git branches.
+
+Before merging:
+
+```bash
+nix fmt .
+home-manager build --flake .#tom
+nix flake check
+home-manager switch --flake .#tom
+```
+
+A successful change can then be merged into `main`:
+
+```bash
+git switch main
+git pull --ff-only
+git merge --ff-only <branch-name>
+git push origin main
+git branch -d <branch-name>
+```
+
+## Security
+
+The repository may contain public identifiers and public-key references, but it
+must not contain:
+
+- private SSH keys;
+- YubiKey PINs;
+- access tokens;
+- API credentials;
+- recovery codes;
+- passwords;
+- encryption secrets.
+
+Secrets and system authentication configuration remain outside this repository.
 
 ## Credits
 
-This configuration builds on the work of the Nix, Home Manager, NVF, Niri,
-Noctalia, Yazi, Starship, Fastfetch and Fedora Toolbx communities.
+This configuration builds on:
 
-## Disclaimer
+- Nix;
+- Home Manager;
+- flake-parts;
+- import-tree;
+- nix-wrapper-modules;
+- NVF;
+- Niri;
+- Fedora Atomic;
+- Universal Blue and Bazzite;
+- Devenv;
+- Toolbx and Podman.
 
-This repository reflects my own machine and workflow. Review every module before
-applying it to another system.
+The repository is intended as a record of my own configuration rather than a
+general-purpose framework, but individual features may still be useful as
+examples.
