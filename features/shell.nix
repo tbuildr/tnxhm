@@ -1,4 +1,8 @@
-{self, ...}: {
+{
+  self,
+  pkgs,
+  ...
+}: {
   flake.homeModules.shell = {
     xdg.configFile = {
       "starship/starship.toml".source =
@@ -11,6 +15,7 @@
     programs.fish = {
       enable = true;
 
+      /*
       shellInit = ''
         # Preserve STARSHIP_CONFIG supplied by devenv.
         # devenv exports its own STARSHIP_CONFIG before starting its fish subshell.
@@ -24,6 +29,14 @@
           set -gx STARSHIP_CONFIG "$HOME/.config/starship/starship.toml"
         end
       '';
+      */
+
+      plugins = [
+        {
+          name = "tide";
+          src = pkgs.fishPlugins.tide.src;
+        }
+      ];
 
       shellAliases = {
         ls = "eza --icons --group-directories-first";
@@ -49,6 +62,7 @@
       '';
     };
 
+    /*
     programs.starship = {
       enable = true;
       enableFishIntegration = true;
@@ -58,6 +72,7 @@
         aws.disabled = true;
       };
     };
+    */
 
     programs.zoxide = {
       enable = true;
