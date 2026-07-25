@@ -11,7 +11,7 @@
 
       font = {
         # Already installed by features/fonts.nix.
-        name = "JetBrainsMono Nerd Font Mono";
+        name = "MesloLGS Nerd Font Mono";
         size = 9;
       };
     };
