@@ -4,8 +4,8 @@
 // Desktop monitor is DP-1 but we will match exactly from this command:
 // niri msg outputs
 output "HKC OVERSEAS LIMITED GA01 0000000000001" {
-    mode "2560x1440@170.000"
-    variable-refresh-rate
+    mode "2560x1440@164.999"
+//    variable-refresh-rate
 }
 
 // The built-in laptop monitor is usually called "eDP-1".
