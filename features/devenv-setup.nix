@@ -1,5 +1,5 @@
 {...}: {
-  flake.homeModules.devenv = {
+  flake.homeModules.devenv-setup = {
     pkgs,
     lib,
     ...

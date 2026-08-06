@@ -12,7 +12,7 @@
       # Reusable public features.
       config.flake.homeModules.btop
       config.flake.homeModules.cli-tools
-      config.flake.homeModules.devenv
+      config.flake.homeModules.devenv-setup
       config.flake.homeModules.editor
       config.flake.homeModules.fastfetch
       config.flake.homeModules.fonts

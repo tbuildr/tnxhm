@@ -47,6 +47,7 @@
         Description=Ollama (${cfg.backend}, rootless)
 
         [Container]
+        Environment=OLLAMA_KEEP_ALIVE=5m
         Image=${selected.image}
         ContainerName=ollama-rootless
         PublishPort=127.0.0.1:11434:11434
