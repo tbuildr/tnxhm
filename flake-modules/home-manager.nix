@@ -20,6 +20,7 @@
       config.flake.homeModules.lazygit
       config.flake.homeModules.niri
       config.flake.homeModules.nix-tools
+      config.flake.homeModules.ollama
       config.flake.homeModules.portals
       config.flake.homeModules.shell
       config.flake.homeModules.ssh
