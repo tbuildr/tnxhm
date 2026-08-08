@@ -50,6 +50,7 @@
         Environment=OLLAMA_KEEP_ALIVE=5m
         Image=${selected.image}
         ContainerName=ollama-rootless
+        Network=ollama-net
         PublishPort=127.0.0.1:11434:11434
         Volume=${cfg.dataDir}:/root/.ollama:Z
         ${selected.extraLines}
