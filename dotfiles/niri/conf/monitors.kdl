@@ -11,10 +11,8 @@ output "HKC OVERSEAS LIMITED GA01 0000000000001" {
 // The built-in laptop monitor is usually called "eDP-1".
 // Find more information on the wiki:
 output "eDP-1" {
-    mode "1920x1080@120.030"
-    scale 2
-    transform "normal"
-    position x=1280 y=0
+    mode "1920x1080@144.023"
+    variable-refresh-rate
 }
 
 // For running gamescope in HDR, direct-scanout  allows it to bypass Niri's composition overhead 
