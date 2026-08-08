@@ -176,7 +176,7 @@ Built for Fedora Atomic + Niri. The exported module can be reused elsewhere, but
 review it first — it includes opinionated package choices, keybindings, and
 shell behaviour, and assumes host-provided software listed above.
 
-## Ollama (rootless, ROCm)
+## Ollama (rootless)
 
 Runs as a rootless user-level podman quadlet with GPU passthrough — no `sudo`
 required for any of the commands below. Managed via this repo's Home Manager
@@ -240,7 +240,7 @@ curl http://127.0.0.1:11434/api/generate -d '{
 Swap `qwen2.5-coder:14b` for any model in the
 [Ollama library](https://ollama.com/library).
 
-### Setup notes / gotchas
+### Setup notes / gotchas (desktop / `backend = "rocm"`)
 
 - Bind-mount dir must exist beforehand — podman won't create it:
   `mkdir -p ~/.ollama-rootless`
@@ -257,3 +257,83 @@ Swap `qwen2.5-coder:14b` for any model in the
   than the rootful/root-mapped alternative, just not perfect isolation.
 - Quadlet unit name is derived from filename, not `ContainerName=` — keep them
   matching.
+
+### NVIDIA-specific setup (laptop / `backend = "cuda"`)
+
+Beyond the shared bind-mount and SELinux `:Z` steps above, the CUDA backend
+needs two additional host-level fixes before rootless GPU passthrough works —
+without them, `nvidia-smi` inside the container fails with
+`Failed to initialize NVML: Insufficient Permissions`, or Ollama silently falls
+back to CPU inference despite the device being attached.
+
+**1. Disable NVIDIA's cgroup device enforcement**, since rootless podman can't
+perform the cgroup manipulation the toolkit's hook normally does, and CDI
+already handles device exposure without it:
+
+```sh
+sudo vi /etc/nvidia-container-runtime/config.toml
+```
+
+Under `[nvidia-container-cli]`, add:
+
+```toml
+no-cgroups = true
+```
+
+**2. Fix SELinux labeling on the NVIDIA device nodes.** `/dev/nvidia*` gets
+labeled `xserver_misc_device_t` by default (meant for the X server, not
+containers), which SELinux blocks `container_t` from accessing even though the
+DAC permissions (`crw-rw-rw-`) look fine. The dedicated
+`nvidia-container-toolkit-selinux` package isn't available in tbzos's configured
+repos, so apply a persistent fcontext rule instead:
+
+```sh
+sudo semanage fcontext -a -t container_file_t '/dev/nvidia.*'
+sudo restorecon -v /dev/nvidia*
+```
+
+(Requires `policycoreutils-python-utils` —
+`sudo rpm-ostree install
+policycoreutils-python-utils` then reboot, if
+`semanage` isn't found.)
+
+Confirm both fixes worked:
+
+```sh
+sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+systemctl --user restart ollama-rootless
+podman exec -it ollama-rootless nvidia-smi
+```
+
+`nvidia-smi` should show a clean GPU table with no NVML error. Then confirm
+Ollama itself detects it — check for a `library=CUDA` line (not `library=cpu`)
+in the logs, and `ollama ps` should show `100% GPU` for a loaded model:
+
+```sh
+journalctl --user -u ollama-rootless -n 20 --no-pager
+podman exec -it ollama-rootless ollama run qwen2.5-coder:1.5b "hi"
+podman exec -it ollama-rootless ollama ps
+```
+
+### Known issue: SELinux label reverts after suspend/resume
+
+The `/dev/nvidia*` fcontext fix above doesn't always survive a suspend/resume or
+driver reload — `devtmpfs` can regenerate the device nodes with the default
+`xserver_misc_device_t` label, silently breaking GPU passthrough again
+(`nvidia-smi` returns `Failed to initialize NVML: Insufficient
+Permissions`).
+
+**Symptom:** Ollama falls back to CPU inference, or `nvidia-smi` fails, despite
+having applied the fcontext fix previously.
+
+**Manual fix, until this is baked into tbzos:**
+
+```sh
+sudo restorecon -v /dev/nvidia*
+```
+
+**Permanent fix:** a `nvidia-restorecon.service` systemd oneshot unit, tracked
+for inclusion in tbzos's NVIDIA image variant, which reapplies the label
+automatically on every boot (`After=systemd-udev-settle.service`). Once that
+lands, this manual step won't be needed. See tbzos's
+`config/systemd/nvidia-restorecon.service`.
