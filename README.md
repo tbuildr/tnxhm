@@ -198,14 +198,14 @@ journalctl --user -u ollama-rootless -n 20 --no-pager
 ### Pulling and running a model
 
 ```sh
-podman exec -it ollama-rootless ollama pull qwen2.5-coder:14b
-podman exec -it ollama-rootless ollama run qwen2.5-coder:14b
+podman exec -it ollama-rootless ollama pull gpt-oss:20b
+podman exec -it ollama-rootless ollama run gpt-oss:20b
 ```
 
 One-off prompt:
 
 ```sh
-podman exec -it ollama-rootless ollama run qwen2.5-coder:14b "Write a systemd unit that mounts a bind mount"
+podman exec -it ollama-rootless ollama run gpt-oss:20b "Write a systemd unit that mounts a bind mount"
 ```
 
 Shell into the container:
@@ -231,14 +231,21 @@ podman exec -it ollama-rootless ollama ps
 
 ```sh
 curl http://127.0.0.1:11434/api/generate -d '{
-  "model": "qwen2.5-coder:14b",
+  "model": "gpt-oss:20b",
   "prompt": "Explain what a bootc image is in one sentence",
   "stream": false
 }'
 ```
 
-Swap `qwen2.5-coder:14b` for any model in the
+Swap `gpt-oss:20b` for any model in the
 [Ollama library](https://ollama.com/library).
+
+**Note for agentic/tool-calling use (e.g. Pi):** not every model that lists
+"tool support" holds Ollama's `<tool_call>` wire format reliably —
+`qwen2.5-coder` in particular tends to drift into printing tool calls as plain
+JSON text instead of executing them. `qwen3` and `gpt-oss` have both tested
+reliable for this. See the `my_c_project` repo's `README.md` /
+`README-pisbx.md` for the full model comparison and Pi-side config.
 
 ### Setup notes / gotchas (desktop / `backend = "rocm"`)
 
@@ -311,7 +318,7 @@ in the logs, and `ollama ps` should show `100% GPU` for a loaded model:
 
 ```sh
 journalctl --user -u ollama-rootless -n 20 --no-pager
-podman exec -it ollama-rootless ollama run qwen2.5-coder:1.5b "hi"
+podman exec -it ollama-rootless ollama run gpt-oss:20b "hi"
 podman exec -it ollama-rootless ollama ps
 ```
 
