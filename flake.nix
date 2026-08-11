@@ -14,7 +14,9 @@
   */
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Decided to use the Determinate weekly cooldown repo for a little safety from Malware attacks
+    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
