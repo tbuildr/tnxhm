@@ -8,6 +8,7 @@
       rclone
       ripgrep
       tmux
+      herdr
       wtype
     ];
   };
