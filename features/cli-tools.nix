@@ -5,6 +5,7 @@
       eza
       fd
       lazydocker
+      nerdctl
       rclone
       ripgrep
       tmux
