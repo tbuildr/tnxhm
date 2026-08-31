@@ -32,6 +32,20 @@
       '';
       interactiveShellInit = ''
         set fish_greeting
+        set -g fish_color_normal normal
+
+        # Tools built on Charm's bubbletea/lipgloss/termenv that leak an OSC 11
+        # background-color query reply (esp. short-lived calls, or glow -p's
+        # raw-mode read picking up a stale reply inside devenv). Add new
+        # offenders here as they turn up.
+        set -g dumb_term_wrapped supabase gh glow
+
+        for cmd in $dumb_term_wrapped
+            function $cmd
+                env TERM=dumb command (status current-function) $argv
+            end
+        end
+
         fastfetch
         echo
       '';
