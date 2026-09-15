@@ -4,12 +4,17 @@
       bat
       eza
       fd
+      herdr
       lazydocker
-      nerdctl
+      kind
+      kubectl
+      kubernetes-helm
+      k9s
+      nmap
       rclone
       ripgrep
+      swappy
       tmux
-      herdr
       wtype
     ];
   };

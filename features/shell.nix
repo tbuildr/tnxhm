@@ -20,6 +20,7 @@
         lt = "eza --tree --icons --level=2";
         lgit = "lazygit";
         ldoc = "lazydocker";
+        nc = "ncat";
         y = "yazi";
         bls = "/bin/ls";
         bvi = "/bin/vi";

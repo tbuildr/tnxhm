@@ -23,6 +23,7 @@
       config.flake.homeModules.portals
       config.flake.homeModules.shell
       config.flake.homeModules.ssh
+      config.flake.homeModules.swappy
       config.flake.homeModules.theming
       config.flake.homeModules.yazi
     ];
