@@ -14,6 +14,7 @@
       nmap
       rclone
       ripgrep
+      shellcheck
       swappy
       tmux
       wtype
