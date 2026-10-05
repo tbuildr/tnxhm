@@ -2,6 +2,7 @@
   flake.homeModules.cli-tools = {pkgs, ...}: {
     home.packages = with pkgs; [
       bat
+      butane
       eza
       fd
       herdr
