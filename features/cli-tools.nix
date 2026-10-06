@@ -11,6 +11,7 @@
       kubectl
       kubernetes-helm
       k9s
+      nodejs_24
       nmap
       rclone
       ripgrep
