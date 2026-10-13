@@ -57,6 +57,9 @@
       '';
 
       profileExtra = ''
+        # Resolve /home -> /var/home, matching fish (login shells read this before .bashrc)
+        export HOME="$(readlink -f "$HOME")"
+
         . "$HOME/.local/bin/env"
       '';
 
