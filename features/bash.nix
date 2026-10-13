@@ -89,9 +89,8 @@
             ble-face filename_directory=fg=28,underline
             ble-face auto_complete=fg=238
 
-            # Static transient prompt: past prompts collapse to "❯ command"
-            # without starting an oh-my-posh process on every Enter
-            bleopt prompt_ps1_final='\[\e[38;2;0;255;65m\]❯\[\e[0m\] '
+            # Transient prompt: erase line 1 (the bar) on Enter, keep the ❯ line
+            bleopt prompt_ps1_transient=trim
 
             ble-attach
           fi
