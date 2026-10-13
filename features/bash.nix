@@ -26,6 +26,7 @@
   in {
     programs.bash = {
       enable = true;
+      package = null; # use Fedora's /usr/bin/bash; don't install a second bash from nixpkgs
       enableCompletion = false; # Fedora's /etc/bashrc already loads bash-completion
       historyControl = ["ignoreboth" "erasedups"];
       historySize = 50000;
