@@ -92,6 +92,9 @@
             # Transient prompt: erase line 1 (the bar) on Enter, keep the ❯ line
             bleopt prompt_ps1_transient=trim
 
+            # Live clock on the right of the ❯ line, drawn natively by ble.sh
+            bleopt prompt_rps1='\g{fg=46}\t\g{none}'
+
             ble-attach
           fi
         '')
