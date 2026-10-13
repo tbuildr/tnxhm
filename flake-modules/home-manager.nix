@@ -10,6 +10,7 @@
       inputs.nvf.homeManagerModules.nvf
 
       # Reusable public features.
+      config.flake.homeModules.bash
       config.flake.homeModules.btop
       config.flake.homeModules.cli-tools
       config.flake.homeModules.devenv-setup
