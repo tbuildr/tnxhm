@@ -65,7 +65,11 @@
     };
 
     programs.zoxide.enableZshIntegration = true;
-    programs.fzf.enableZshIntegration = true;
+    programs.fzf = {
+      enable = true;
+      enableZshIntegration = true;
+      enableFishIntegration = false; # don't clash with fzf.fish
+    };
 
     programs.carapace = {
       enable = true;
