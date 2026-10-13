@@ -26,6 +26,7 @@
       config.flake.homeModules.swappy
       config.flake.homeModules.theming
       config.flake.homeModules.yazi
+      config.flake.homeModules.zsh
     ];
   };
 in {
