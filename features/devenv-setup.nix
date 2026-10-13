@@ -24,5 +24,11 @@
     programs.fish.interactiveShellInit = lib.mkAfter ''
       direnv hook fish | source
     '';
+
+    # Bash: must land before ble-attach (mkOrder 2500 in bash.nix) so the
+    # hook makes it into PROMPT_COMMAND
+    programs.bash.initExtra = lib.mkAfter ''
+      eval "$(direnv hook bash)"
+    '';
   };
 }

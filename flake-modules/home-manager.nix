@@ -16,6 +16,7 @@
       config.flake.homeModules.devenv-setup
       config.flake.homeModules.editor
       config.flake.homeModules.fastfetch
+      config.flake.homeModules.fish
       config.flake.homeModules.fonts
       config.flake.homeModules.kitty
       config.flake.homeModules.lazygit
@@ -27,7 +28,6 @@
       config.flake.homeModules.swappy
       config.flake.homeModules.theming
       config.flake.homeModules.yazi
-      config.flake.homeModules.zsh
     ];
   };
 in {

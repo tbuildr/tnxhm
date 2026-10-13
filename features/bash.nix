@@ -1,4 +1,4 @@
-# features/bash.nix
+# features/bash.nix — bash only
 {...}: {
   flake.homeModules.bash = {
     config,
@@ -6,6 +6,17 @@
     pkgs,
     ...
   }: let
+    cfg = config.tnxhm.shell;
+
+    sabbrevs =
+      lib.concatStringsSep "\n"
+      (lib.mapAttrsToList (n: v: "ble-sabbrev ${n}=${lib.escapeShellArg v}") cfg.abbreviations);
+
+    dumbTermWrappers =
+      lib.concatMapStringsSep "\n"
+      (cmd: "${cmd}() { TERM=dumb command ${cmd} \"$@\"; }")
+      cfg.dumbTermWrapped;
+
     # Nerd Font glyph from a hex codepoint, so no private-use chars live in this file
     i = code: builtins.fromJSON ''"\u${code}"'';
 
@@ -21,8 +32,11 @@
       historyFileSize = 50000;
       historyFile = "${config.xdg.dataHome}/bash/history";
 
-      # Carried over from Fedora's skeleton ~/.bashrc
       bashrcExtra = ''
+        # Resolve /home -> /var/home, matching fish
+        export HOME="$(readlink -f "$HOME")"
+
+        # Carried over from Fedora's skeleton ~/.bashrc
         if [ -f /etc/bashrc ]; then
           . /etc/bashrc
         fi
@@ -51,10 +65,19 @@
         (lib.mkBefore ''
           [[ $- == *i* ]] && source ${pkgs.blesh}/share/blesh/ble.sh --attach=none
         '')
+
+        ''
+          ${dumbTermWrappers}
+
+          fastfetch
+          echo
+        ''
+
         # ble-attach must run after every HM integration (zoxide lands after mkAfter)
         (lib.mkOrder 2500 ''
           if [[ ''${BLE_VERSION-} ]]; then
             ${sabbrevs}
+            bleopt edit_magic_accept=sabbrev
 
             # Matrix-ish highlighting (256-colour indexes)
             ble-face command_builtin=fg=46
@@ -72,14 +95,18 @@
       ];
     };
 
-    programs.fzf.enableBashIntegration = true;
+    programs.fzf = {
+      enable = true;
+      enableBashIntegration = true;
+      enableFishIntegration = false; # leave fish's Ctrl+R as-is
+    };
     programs.zoxide.enableBashIntegration = true;
     programs.carapace.enableBashIntegration = false; # breaks completion under ble.sh
 
     programs.oh-my-posh = {
       enable = true;
       enableBashIntegration = true;
-      enableZshIntegration = false; # zsh keeps p10k
+      enableZshIntegration = false;
       enableFishIntegration = false; # fish keeps Tide
       settings = {
         version = 3;
@@ -92,6 +119,7 @@
         };
 
         blocks = [
+          # Line 1: powerline bar
           {
             type = "prompt";
             alignment = "left";
@@ -111,7 +139,7 @@
                 background = "#008f11";
                 foreground = "#0d0208";
                 template = " ${i "f07c"}  {{ .Path }} ";
-                properties.style = "folder";
+                properties.style = "full";
               }
               {
                 type = "git";
@@ -123,7 +151,7 @@
                   "{{ if or (gt .Ahead 0) (gt .Behind 0) }}#d4ff00{{ end }}"
                 ];
                 foreground = "#0d0208";
-                template = " {{ .UpstreamIcon }}{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }}  ${i "f044"} {{ .Working.String }}{{ end }}{{ if .Staging.Changed }}  ${i "f046"} {{ .Staging.String }}{{ end }} ";
+                template = " {{ if .UpstreamIcon }}{{ .UpstreamIcon }} {{ end }}{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }}  ${i "f044"} {{ .Working.String }}{{ end }}{{ if .Staging.Changed }}  ${i "f046"} {{ .Staging.String }}{{ end }} ";
                 properties = {
                   fetch_status = true;
                   fetch_upstream_icon = true;
@@ -152,6 +180,22 @@
                 foreground_templates = ["{{ if gt .Code 0 }}#ff4141{{ end }}"];
                 template = " {{ if gt .Code 0 }}${i "f00d"} {{ .Code }}{{ else }}${i "f256"}{{ end }} ";
                 properties.always_enabled = true;
+              }
+            ];
+          }
+
+          # Line 2: input arrow (green on success, red on failure)
+          {
+            type = "prompt";
+            alignment = "left";
+            newline = true;
+            segments = [
+              {
+                type = "text";
+                style = "plain";
+                foreground = "#00ff41";
+                foreground_templates = ["{{ if gt .Code 0 }}#ff4141{{ end }}"];
+                template = "❯";
               }
             ];
           }
