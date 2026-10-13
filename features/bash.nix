@@ -6,14 +6,6 @@
     pkgs,
     ...
   }: let
-    abbrs = {
-      gs = "git status";
-      gc = "git commit";
-    };
-    sabbrevs =
-      lib.concatStringsSep "\n"
-      (lib.mapAttrsToList (n: v: "ble-sabbrev ${n}=${lib.escapeShellArg v}") abbrs);
-
     # Nerd Font glyph from a hex codepoint, so no private-use chars live in this file
     i = code: builtins.fromJSON ''"\u${code}"'';
 
