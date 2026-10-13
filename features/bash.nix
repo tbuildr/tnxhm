@@ -89,6 +89,10 @@
             ble-face filename_directory=fg=28,underline
             ble-face auto_complete=fg=238
 
+            # Static transient prompt: past prompts collapse to "❯ command"
+            # without starting an oh-my-posh process on every Enter
+            bleopt prompt_ps1_final='\[\e[38;2;0;255;65m\]❯\[\e[0m\] '
+
             ble-attach
           fi
         '')
@@ -200,11 +204,6 @@
             ];
           }
         ];
-
-        transient_prompt = {
-          foreground = "#00ff41";
-          template = "❯ ";
-        };
       };
     };
   };
