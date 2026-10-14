@@ -10,7 +10,7 @@
 
     sabbrevs =
       lib.concatStringsSep "\n"
-      (lib.mapAttrsToList (n: v: "ble-sabbrev ${n}=${lib.escapeShellArg v}") cfg.abbreviations);
+      (lib.mapAttrsToList (n: v: "ble-sabbrev -l ${n}=${lib.escapeShellArg v}") cfg.abbreviations);
 
     dumbTermWrappers =
       lib.concatMapStringsSep "\n"
