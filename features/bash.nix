@@ -157,8 +157,8 @@
                 powerline_symbol = arrow;
                 background = "#00ff41";
                 background_templates = [
-                  "{{ if or .Working.Changed .Staging.Changed }}#9aff00{{ end }}"
-                  "{{ if or (gt .Ahead 0) (gt .Behind 0) }}#d4ff00{{ end }}"
+                  "{{ if or .Working.Changed .Staging.Changed }}#ff5f87{{ end }}"
+                  "{{ if or (gt .Ahead 0) (gt .Behind 0) }}#87cefa{{ end }}"
                 ];
                 foreground = "#0d0208";
                 template = " {{ if .UpstreamIcon }}{{ .UpstreamIcon }} {{ end }}{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }}  ${i "f044"} {{ .Working.String }}{{ end }}{{ if .Staging.Changed }}  ${i "f046"} {{ .Staging.String }}{{ end }} ";
