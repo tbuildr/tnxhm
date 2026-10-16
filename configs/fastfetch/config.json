@@ -15,26 +15,42 @@
       "ndigits": 0
     },
     "color": {
-      "keys": ""
+      "keys": "",
+      "title": "1;38;2;0;255;65",
+      "output": "38;2;170;255;180",
+      "separator": "38;2;0;143;17"
     },
     "separator": " \u001b[2C",
     "constants": [
       "\u001b[s",
       "\u001b[u\u001b[14C",
-      "\u001b[38;2;230;138;66m",
-      "\u001b[38;2;214;93;14m",
-      "\u001b[38;2;240;192;64m",
-      "\u001b[38;2;215;153;33m",
-      "\u001b[38;2;106;181;184m",
-      "\u001b[38;2;69;133;136m",
-      "\u001b[38;2;208;112;160m",
-      "\u001b[38;2;177;98;134m",
-      "\u001b[38;2;196;195;48m",
-      "\u001b[38;2;152;151;26m",
-      "\u001b[38;2;139;192;140m",
-      "\u001b[38;2;104;157;106m"
+      "\u001b[38;2;210;255;215m",
+      "\u001b[38;2;0;200;60m",
+      "\u001b[38;2;150;255;160m",
+      "\u001b[38;2;0;180;55m",
+      "\u001b[38;2;0;255;65m",
+      "\u001b[38;2;0;165;45m",
+      "\u001b[38;2;0;230;60m",
+      "\u001b[38;2;0;150;40m",
+      "\u001b[38;2;0;205;55m",
+      "\u001b[38;2;0;135;30m",
+      "\u001b[38;2;0;180;50m",
+      "\u001b[38;2;0;120;25m"
     ],
-    "brightColor": false
+    "brightColor": false,
+    "percent": {
+      "color": {
+        "green": "38;2;0;255;65",
+        "yellow": "38;2;190;255;90",
+        "red": "1;38;2;230;255;230"
+      }
+    },
+    "bar": {
+      "color": {
+        "total": "38;2;0;59;0",
+        "border": "38;2;0;143;17"
+      }
+    }
   },
   "modules": [
     {
@@ -43,7 +59,7 @@
     {
       "type": "version",
       "key": " ",
-      "format": "🚀\u001b[1m {$3}{1} - {2} "
+      "format": "{$3} \u001b[1m {$3}{1} - {2} "
     },
     {
       "type": "title",
@@ -68,9 +84,9 @@
     },
     {
       "type": "command",
-      "keyIcon": "",
-      "key": "{$4}╰─ {icon}  {$1}Starship{$2}",
-      "text": "starship --version | head -1 | awk '{print $2}'"
+      "keyIcon": "",
+      "key": "{$4}╰─ {icon}  {$1}Image{$2}",
+      "text": "unset LD_LIBRARY_PATH; rpm-ostree status --booted --json | jq -r '.deployments[0].\"container-image-reference\"' | sed 's|.*docker://||'"
     },
     {
       "type": "break"
@@ -78,7 +94,7 @@
     {
       "type": "custom",
       "key": " ",
-      "format": "🔧️ {$5}Hardware "
+      "format": "{$5}  {$5}Hardware "
     },
     {
       "type": "host",
@@ -126,7 +142,7 @@
     {
       "type": "custom",
       "key": " ",
-      "format": "🌍 {$7}Network "
+      "format": "{$7}  {$7}Network "
     },
     {
       "type": "wifi",
@@ -154,7 +170,7 @@
     {
       "type": "custom",
       "key": " ",
-      "format": "🔋️ {$9}Peripherals "
+      "format": "{$9}  {$9}Peripherals "
     },
     {
       "type": "bluetooth",
@@ -174,7 +190,7 @@
     {
       "type": "custom",
       "key": " ",
-      "format": "🎧 {$11}Media "
+      "format": "{$11}  {$11}Media "
     },
     {
       "type": "media",
@@ -191,7 +207,7 @@
     {
       "type": "custom",
       "key": " ",
-      "format": "🕔 {$13}Date/Time "
+      "format": "{$13}  {$13}Date/Time "
     },
     {
       "type": "datetime",
@@ -206,9 +222,9 @@
       "type": "break"
     },
     {
-      "type": "colors",
+      "type": "custom",
       "key": " ",
-      "symbol": "circle"
+      "format": "{$14}●  {$12}●  {$10}●  {$8}●  {$6}●  {$4}●  {$7}●  {$5}●  {$3}●\u001b[0m"
     }
   ]
 }
