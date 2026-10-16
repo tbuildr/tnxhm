@@ -71,6 +71,12 @@
       "key": "{$4}├─ {icon}  {$1}{sysname}{$2}"
     },
     {
+      "type": "command",
+      "keyIcon": "",
+      "key": "{$4}├─ {icon}  {$1}Image{$2}",
+      "text": "unset LD_LIBRARY_PATH; rpm-ostree status --booted --json | jq -r '.deployments[0].\"container-image-reference\"' | sed 's|.*docker://||'"
+    },
+    {
       "type": "shell",
       "key": "{$4}├─ {icon}  {$1}Shell{$2}"
     },
@@ -80,13 +86,7 @@
     },
     {
       "type": "packages",
-      "key": "{$4}├─ {icon}  {$1}Packages{$2}"
-    },
-    {
-      "type": "command",
-      "keyIcon": "",
-      "key": "{$4}╰─ {icon}  {$1}Image{$2}",
-      "text": "unset LD_LIBRARY_PATH; rpm-ostree status --booted --json | jq -r '.deployments[0].\"container-image-reference\"' | sed 's|.*docker://||'"
+      "key": "{$4}╰─ {icon}  {$1}Packages{$2}"
     },
     {
       "type": "break"
