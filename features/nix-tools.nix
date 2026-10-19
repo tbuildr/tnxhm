@@ -9,7 +9,11 @@
   deadnix                  — identifies unused Nix code.
   */
 
-  flake.homeModules.nix-tools = {pkgs, ...}: {
+  flake.homeModules.nix-tools = {
+    lib,
+    pkgs,
+    ...
+  }: {
     home.packages = with pkgs; [
       alejandra
       deadnix
@@ -20,7 +24,7 @@
 
     programs.nh = {
       enable = true;
-      flake = "$HOME/.config/home-manager";
+      flake = lib.mkDefault "$HOME/.config/home-manager";
     };
 
     programs.nix-index = {
