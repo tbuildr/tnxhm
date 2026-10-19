@@ -42,9 +42,14 @@
           . /etc/bashrc
         fi
 
-        if ! [[ "$PATH" =~ "$HOME/.local/bin:$HOME/bin:" ]]; then
-          PATH="$HOME/.local/bin:$HOME/bin:$PATH"
-        fi
+        # Prepend user bin dirs once each (sessionPath appends them; this keeps them ahead of /usr/bin)
+        for d in "$HOME/bin" "$HOME/.local/bin"; do
+          case ":$PATH:" in
+            *":$d:"*) ;;
+            *) PATH="$d:$PATH" ;;
+          esac
+        done
+        unset d
         export PATH
 
         if [ -d ~/.bashrc.d ]; then
@@ -53,15 +58,11 @@
           done
         fi
         unset rc
-
-        . "$HOME/.local/bin/env"
       '';
 
       profileExtra = ''
         # Resolve /home -> /var/home, matching fish (login shells read this before .bashrc)
         export HOME="$(readlink -f "$HOME")"
-
-        . "$HOME/.local/bin/env"
       '';
 
       initExtra = lib.mkMerge [

@@ -18,6 +18,7 @@
       shellcheck
       swappy
       tmux
+      uv
       wtype
     ];
   };

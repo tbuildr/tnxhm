@@ -15,6 +15,11 @@
     };
 
     config = {
+      home.sessionPath = [
+        "$HOME/.local/bin"
+        "$HOME/bin"
+      ];
+
       # Tools built on Charm's bubbletea/lipgloss/termenv that leak an OSC 11
       # background-color query reply (esp. short-lived calls, or glow -p's
       # raw-mode read picking up a stale reply inside devenv). Add new
