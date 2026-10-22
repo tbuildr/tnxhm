@@ -5,30 +5,22 @@
     ...
   }: {
     # Install the Devenv CLI for the user.
-    home.packages = [
-      pkgs.devenv
-      pkgs.direnv
-    ];
+    home.packages = [pkgs.devenv];
 
-    # Global direnvrc: pulls in devenv's `use_devenv` function so any
-    # project's .envrc can just say `use devenv` without repeating the
-    # source_url boilerplate per-project.
-    xdg.configFile."direnv/direnvrc".text = ''
-      eval "$(devenv direnvrc)"
-    '';
+    # Native devenv shell hook: activates a project's devenv on cd into
+    # it, deactivates on cd out. Replaces direnv + per-project .envrc;
+    # per-project env now lives entirely in each devenv.nix.
 
-    # Automatically activate trusted Devenv projects.
-    # Changed to call direnv which it's envrc will call devenv
-    # This means that we can have .envrc in project subdirs to set variables specific to that
-    # and hold that next to the project
+    # Fish: dormant unless programs.fish.enable is set elsewhere; kept so
+    # a temporary switch back to fish gets the hook automatically.
     programs.fish.interactiveShellInit = lib.mkAfter ''
-      direnv hook fish | source
+      devenv hook fish | source
     '';
 
     # Bash: must land before ble-attach (mkOrder 2500 in bash.nix) so the
-    # hook makes it into PROMPT_COMMAND
+    # hook makes it into PROMPT_COMMAND — lib.mkAfter is order 1500.
     programs.bash.initExtra = lib.mkAfter ''
-      eval "$(direnv hook bash)"
+      eval "$(devenv hook bash)"
     '';
   };
 }
