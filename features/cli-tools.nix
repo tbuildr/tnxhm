@@ -6,6 +6,7 @@
       eza
       fd
       herdr
+      gitleaks
       lazydocker
       kind
       kubectl
