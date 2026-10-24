@@ -66,16 +66,18 @@
       '';
 
       initExtra = lib.mkMerge [
-        # ble.sh loads first, detached
+        # ble.sh loads first, detached - only on a real terminal
         (lib.mkBefore ''
-          [[ $- == *i* ]] && source ${pkgs.blesh}/share/blesh/ble.sh --attach=none
+          [[ $- == *i* && -t 0 && -t 1 ]] && source ${pkgs.blesh}/share/blesh/ble.sh --attach=none
         '')
 
         ''
           ${dumbTermWrappers}
 
-          fastfetch
-          echo
+          if [[ -t 0 && -t 1 ]]; then
+            fastfetch
+            echo
+          fi
         ''
 
         # ble-attach must run after every HM integration (zoxide lands after mkAfter)

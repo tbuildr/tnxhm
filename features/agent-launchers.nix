@@ -103,6 +103,16 @@
         --shm-size=1gb
         --cap-drop=ALL
         --security-opt=no-new-privileges
+        # Fixed MCS level shared by all agent containers: :Z then labels
+        # mounts for "agent sandboxes" as a group, so several can share a
+        # workspace or state dir concurrently, while other containers
+        # (kind, llama-server, …) still can't touch them. Default per-
+        # container random levels make a second :Z mount relabel files
+        # away from the first container mid-session.
+        #
+        # Comma pairs the MCS categories — quoted so shellcheck (SC2054)
+        # doesn't mistake it for an array separator.
+        --security-opt=label=level:"s0:c731,c732"
         -v "$ws:/workspace:Z"
       )
     '';
