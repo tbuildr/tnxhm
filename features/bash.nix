@@ -112,6 +112,7 @@
       enable = true;
       enableBashIntegration = true;
       enableFishIntegration = false; # leave fish's Ctrl+R as-is
+      historyWidget.command = ""; # atuin owns Ctrl-R
     };
     programs.zoxide.enableBashIntegration = true;
     programs.carapace.enableBashIntegration = false; # breaks completion under ble.sh
