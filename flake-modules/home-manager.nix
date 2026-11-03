@@ -10,7 +10,6 @@
       inputs.nvf.homeManagerModules.nvf
 
       # Reusable public features.
-      config.flake.homeModules.agent-launchers
       config.flake.homeModules.bash
       config.flake.homeModules.btop
       config.flake.homeModules.cli-tools
