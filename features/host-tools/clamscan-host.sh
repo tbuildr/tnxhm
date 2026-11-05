@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-set -u
+# Written for plain bash: scan and find errors (permission denied etc.) are
+# expected and must not abort the run. writeShellApplication prepends
+# `set -euo pipefail`, so turn errexit and pipefail back off here.
+set -u +e +o pipefail
 
-CACHE_DIR="$HOME/.cache/clamav-db"
-mkdir -p "$CACHE_DIR"
+# Signatures come from the system database, kept current by
+# clamav-freshclam.service (root-owned /var/lib/clamav, updated as clamupdate).
+# The script no longer downloads its own copy.
+DB_DIR=/var/lib/clamav
 
-# For full root-covering coverage, run the whole script under sudo instead
-# of passing an arg — unlike the old podman version, native scanning has no
-# privilege boundary between counting and scanning, so there's nothing to
-# split: `sudo ./clamscan-host.sh` vs `./clamscan-host.sh`.
+# For full root-covering coverage, run the whole script under sudo
+# (clamscan-host-full). Under sudo it still scans and excludes the invoking
+# user's home, not /root, and logs to /var/log/clamscan-host.
 
-# Exit status: 0 = no infections found, 1 = infections found.
+# Exit status: 0 = no infections found, 1 = infections found,
+# 2 = no usable signature database.
 # Scan errors (permission denied etc.) are reported in the log but do not
 # affect the exit status, since a non-root run always hits some.
 
@@ -17,6 +22,20 @@ mkdir -p "$CACHE_DIR"
 # SCAN SUMMARY block, in full) and a per-checkpoint rate .tsv for plotting
 # throughput over time. Off by default for a lean run.
 DEBUG="${CLAMSCAN_DEBUG:-0}"
+
+# The user whose home to scan: the sudo caller under sudo, else ourselves.
+REAL_USER="${SUDO_USER:-$(id -un)}"
+USER_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+[ -n "$USER_HOME" ] || { echo "Cannot resolve home for $REAL_USER" >&2; exit 2; }
+
+# --- Signature database check ---
+if ! compgen -G "$DB_DIR/main.c[lv]d" >/dev/null || ! compgen -G "$DB_DIR/daily.c[lv]d" >/dev/null; then
+  echo "No ClamAV signatures in $DB_DIR — check: systemctl status clamav-freshclam.service" >&2
+  exit 2
+fi
+if [ -z "$(find "$DB_DIR" -maxdepth 1 -name 'daily.c[lv]d' -mmin -2880 2>/dev/null)" ]; then
+  echo "WARNING: daily signatures in $DB_DIR are over 2 days old — check: journalctl -u clamav-freshclam" >&2
+fi
 
 HOST_EXCLUDES=(
   "/proc" "/sys" "/dev" "/run" "/tmp"
@@ -27,11 +46,11 @@ HOST_EXCLUDES=(
   "/var/lib/containers"
   "/var/lib/flatpak"
   "/var/lib/nix/store"
-  "$HOME/.local/share/containers/storage"
-  "$HOME/.local/share/Steam"
-  "$HOME/.cache/huggingface/hub"
-  "$HOME/Projects/tkube/.state/llama-cache"
-  "$HOME/.var/app/org.mozilla.firefox/cache"
+  "$USER_HOME/.local/share/containers/storage"
+  "$USER_HOME/.local/share/Steam"
+  "$USER_HOME/.cache/huggingface/hub"
+  "$USER_HOME/Projects/tkube/.state/llama-cache"
+  "$USER_HOME/.var/app/org.mozilla.firefox/cache"
 )
 
 is_excluded() {
@@ -76,7 +95,7 @@ done < <(find /var -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 while IFS= read -r -d '' entry; do
   is_excluded "$entry" && continue
   SCAN_UNITS+=("$entry")
-done < <(find "$HOME" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
+done < <(find "$USER_HOME" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 
 echo "Scan units (${#SCAN_UNITS[@]}):"
 printf '  %s\n' "${SCAN_UNITS[@]}"
@@ -103,21 +122,16 @@ for unit in "${SCAN_UNITS[@]}"; do
 done
 echo "Files to scan: $TOTAL"
 
-# --- freshclam, once, against a config we generate ourselves ---
-FRESHCLAM_CONF_DIR="$(mktemp -d)"
-FRESHCLAM_CONF="$FRESHCLAM_CONF_DIR/freshclam.conf"
-{
-  echo "DatabaseDirectory $CACHE_DIR"
-  echo "DatabaseMirror database.clamav.net"
-} >"$FRESHCLAM_CONF"
-trap 'rm -rf "$FRESHCLAM_CONF_DIR"' EXIT
-
-echo "Updating virus definitions..."
-freshclam --config-file="$FRESHCLAM_CONF"
-
 # --- Parallel scan ---
-LOG_DIR="$HOME/.local/state/clamscan-logs"
-mkdir -p "$LOG_DIR"
+# Root runs log to a root-owned directory rather than writing into a
+# user-writable one.
+if [ "$(id -u)" -eq 0 ]; then
+  LOG_DIR=/var/log/clamscan-host
+  install -d -m 0700 "$LOG_DIR"
+else
+  LOG_DIR="$USER_HOME/.local/state/clamscan-logs"
+  mkdir -p "$LOG_DIR"
+fi
 STAMP="$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="$LOG_DIR/scan-$STAMP.log"
 RAW_LOG_FILE="$LOG_DIR/scan-$STAMP-raw.log"
@@ -135,7 +149,7 @@ echo "Starting scan across ${#SCAN_UNITS[@]} units with $JOBS parallel workers..
 echo
 
 printf '%s\0' "${SCAN_UNITS[@]}" |
-  xargs -0 -P "$JOBS" -I{} clamscan -r -i -v --database="$CACHE_DIR" "${CLAMSCAN_EXCLUDES[@]}" {} 2>&1 |
+  xargs -0 -P "$JOBS" -I{} clamscan -r -i -v --database="$DB_DIR" "${CLAMSCAN_EXCLUDES[@]}" {} 2>&1 |
   tr -d '\r' |
   { if [ "$DEBUG" = "1" ]; then tee "$RAW_LOG_FILE"; else cat; fi; } |
   awk -v total="$TOTAL" -v progress_log="$PROGRESS_LOG" -v debug="$DEBUG" -v jobs="$JOBS" '
