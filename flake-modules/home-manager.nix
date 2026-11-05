@@ -18,6 +18,7 @@
       config.flake.homeModules.fastfetch
       config.flake.homeModules.fish
       config.flake.homeModules.fonts
+      config.flake.homeModules.host-tools
       config.flake.homeModules.kitty
       config.flake.homeModules.lazygit
       config.flake.homeModules.niri

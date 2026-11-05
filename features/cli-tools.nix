@@ -5,7 +5,6 @@
       butane
       eza
       fd
-      herdr
       gitleaks
       lazydocker
       kind
