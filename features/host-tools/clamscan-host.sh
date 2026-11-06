@@ -29,7 +29,10 @@ USER_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
 [ -n "$USER_HOME" ] || { echo "Cannot resolve home for $REAL_USER" >&2; exit 2; }
 
 # --- Signature database check ---
-if ! compgen -G "$DB_DIR/main.c[lv]d" >/dev/null || ! compgen -G "$DB_DIR/daily.c[lv]d" >/dev/null; then
+# Plain file tests, not compgen: writeShellApplication's bash is built
+# without programmable completion, so compgen doesn't exist there.
+has_db() { [ -f "$DB_DIR/$1.cvd" ] || [ -f "$DB_DIR/$1.cld" ]; }
+if ! has_db main || ! has_db daily; then
   echo "No ClamAV signatures in $DB_DIR — check: systemctl status clamav-freshclam.service" >&2
   exit 2
 fi
@@ -51,6 +54,9 @@ HOST_EXCLUDES=(
   "$USER_HOME/.cache/huggingface/hub"
   "$USER_HOME/Projects/tkube/.state/llama-cache"
   "$USER_HOME/.var/app/org.mozilla.firefox/cache"
+  # rclone FUSE mount: root can't read it (no allow_other, by design), and
+  # scanning through it would download the whole remote.
+  "$USER_HOME/Dropbox"
 )
 
 is_excluded() {
@@ -82,6 +88,9 @@ while IFS= read -r -d '' entry; do
   [ "$base" = "home" ] && continue
   [ "$base" = "var" ] && continue
   is_excluded "$entry" && continue
+  # /root, /opt, /srv, /mnt are symlinks into /var: clamscan follows a
+  # symlink given as an argument, so they would be scanned twice.
+  [ -L "$entry" ] && continue
   SCAN_UNITS+=("$entry")
 done < <(find / -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 
@@ -89,11 +98,17 @@ while IFS= read -r -d '' entry; do
   base="$(basename "$entry")"
   [ "$base" = "home" ] && continue
   is_excluded "$entry" && continue
+  # /root, /opt, /srv, /mnt are symlinks into /var: clamscan follows a
+  # symlink given as an argument, so they would be scanned twice.
+  [ -L "$entry" ] && continue
   SCAN_UNITS+=("$entry")
 done < <(find /var -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 
 while IFS= read -r -d '' entry; do
   is_excluded "$entry" && continue
+  # /root, /opt, /srv, /mnt are symlinks into /var: clamscan follows a
+  # symlink given as an argument, so they would be scanned twice.
+  [ -L "$entry" ] && continue
   SCAN_UNITS+=("$entry")
 done < <(find "$USER_HOME" -mindepth 1 -maxdepth 1 -print0 2>/dev/null)
 
